@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Hacker News Tweaks
 // @namespace   https://github.com/abstraction/userscripts
-// @description Cosmetic and usability weaks for Hacker News
+// @description Cosmetic and usability tweaks for Hacker News
 // @author      abstraction
 // @version     1.0.0
 // @match       https://news.ycombinator.com/*
