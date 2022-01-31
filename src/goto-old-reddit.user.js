@@ -7,6 +7,7 @@
 // @author      abstraction
 // @match       https://www.reddit.com/*
 // @match       https://reddit.com/*
+// @homepageURL https://github.com/abstraction/userscripts
 // @updateURL   https://github.com/abstraction/userscripts/blob/master/src/goto-old-reddit.user.js
 // @run-at       document-start
 // ==/UserScript==

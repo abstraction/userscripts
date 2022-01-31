@@ -6,6 +6,7 @@
 // @version     1.0.0
 // @match       https://news.ycombinator.com/*
 // @match       http://news.ycombinator.com/*
+// @homepageURL https://github.com/abstraction/userscripts
 // @updateURL   https://github.com/abstraction/userscripts/blob/master/src/hacker-news-tweaks.user.js
 // ==/UserScript==
 

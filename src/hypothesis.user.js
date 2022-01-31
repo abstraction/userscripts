@@ -4,12 +4,12 @@
 // @description Hypothesis annotator for Firefox and Firefox Android
 // @author      abstraction
 // @version     1.0.0
-// @match       *
+// @match       http*://*/*
+// @homepageURL https://github.com/abstraction/userscripts
 // @updateURL   https://github.com/abstraction/userscripts/blob/master/src/hypothesis.user.js
 // ==/UserScript==
 
-// this + modified header info = bypass csp
-// see your notes for ^ 
+// modified header info to bypass csp (see notes) or use Tampermonkey
 
 (function() {
    window.hypothesisConfig = function() {
