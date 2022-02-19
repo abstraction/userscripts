@@ -3,7 +3,7 @@
 // @namespace   https://github.com/abstraction/userscripts
 // @description Cosmetic and usability tweaks for Hacker News
 // @author      abstraction
-// @version     1.0.0
+// @version     1.1
 // @match       https://news.ycombinator.com/*
 // @match       http://news.ycombinator.com/*
 // @homepageURL https://github.com/abstraction/userscripts
@@ -13,9 +13,15 @@
 var css =
   '<style type="text/css">' +
   // Wildcards
-  '* { font-family: Helvetica, sans-serif !important; font-size: 18px; }' +
+  '* { font-family: "Iosevka Aile", Helvetica, sans-serif !important; font-size: 18px; }' +
   // Header
-  'body { margin:0; } ' +
+  'body { margin:0; background-color:#F6F6F0 } ' +
+  // hacky stuff start
+  '#hnmain > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) { opacity: 0.15; background-color:inherit; }' + // topbar
+  '#hnmain > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > a:nth-child(1) > img:nth-child(1) {display:none}' + // logo
+  'div.comment { width: 60ch }' + // comment <= 60 characters
+  'body { width: 50vw; margin: 0 auto }' +
+  // hacker stuff end
   'body > center > table > tbody > tr:first-child { color:#47260F }' +
   'body > center > table > tbody > tr:first-child > td { padding:5px 0 }' +
   'body > center > table > tbody > tr:first-child > td a:hover { color:#fff }' +
@@ -77,6 +83,7 @@ const collapseComments = () => {
           let currentCom = comment.querySelector('.comhead');
           if (currentCom.style['font-weight'] === '') {
             currentCom.style['font-weight'] = 'bold';
+            currentCom.style['font-style'] = 'italic';
           } else {
             comheadStrong = false;
             currentCom.style['font-weight'] = '';
