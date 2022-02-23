@@ -3,7 +3,7 @@
 // @namespace   https://github.com/abstraction/userscripts
 // @description Redirect new Reddit to the (G)old one
 // @author      abstraction
-// @version     1.1
+// @version     1.2
 // @author      abstraction
 // @match       https://www.reddit.com/*
 // @match       https://reddit.com/*
@@ -15,18 +15,28 @@
 
 const prettify = () => {
   let paras = document.querySelectorAll('p');
-  for(let para of paras){
-      if (para.classList.length === 0) {  // don't big fluff like author, question, etc
-          para.style.fontSize ="18px";
-          para.style.lineHeight = '1.45';
-          para.style.fontFamily = 'Iosevka Aile';
-      }
+  for (let para of paras) {
+    if (para.classList.length === 0) {  // don't big fluff like author, question, etc
+      para.style.fontSize = "18px";
+      para.style.lineHeight = '1.45';
+      para.style.fontFamily = 'Iosevka Aile';
+    }
   }
 }
 
 const main = () => {
-  if (top.location.hostname !== 'old.reddit.com') top.location.hostname = 'old.reddit.com';
-  else document.addEventListener('DOMContentLoaded', prettify);
+  if (top.location.hostname !== 'old.reddit.com') {
+    top.location.hostname = 'old.reddit.com';
+  }
+  else {
+    document.addEventListener('DOMContentLoaded', prettify);
+    if (document.referrer === "https://www.reddit.com/") { // don't wanna mess the experience otherwise
+      history.pushState({}, ''); // see notes for why
+      window.addEventListener('popstate', () => {
+        history.go(-2);
+      })
+    }
+  }
 }
 
 main();
