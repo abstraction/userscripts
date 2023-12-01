@@ -1,55 +1,62 @@
 // ==UserScript==
-// @name        Goto Old Reddit
-// @namespace   https://github.com/abstraction/userscripts
-// @description Redirect new Reddit to the (G)old one
-// @author      abstraction
-// @version     1.2
-// @author      abstraction
-// @match       https://www.reddit.com/*
-// @match       https://reddit.com/*
-// @match       https://old.reddit.com/*
-// @homepageURL https://github.com/abstraction/userscripts
-// @updateURL   https://github.com/abstraction/userscripts/blob/master/src/goto-old-reddit.user.js
-// @run-at       document-start
+// @name          Goto Old Reddit
+// @namespace     https://github.com/abstraction/userscripts
+// @description   Old Reddit but a bit more pleasing.
+// @author        abstraction
+// @version       1.3
+// @match         https://*.reddit.com*
+// @match         https://reddit.com*
+// @updateURL     https://raw.githubusercontent.com/abstraction/userscripts/master/src/goto-old-reddit.user.js
+// @downloadURL   https://raw.githubusercontent.com/abstraction/userscripts/master/src/goto-old-reddit.user.js
+// @run-at        document-start
 // ==/UserScript==
 
+const setStyles = (element, styles) => {
+  for (let style in styles) {
+    element.style[style] = styles[style];
+  }
+};
+
 const prettify = () => {
+  // Make paragraph text bigger
   let paras = document.querySelectorAll('p');
   for (let para of paras) {
-    if (para.classList.length === 0) {  // don't big fluff like author, question, etc
-      para.style.fontSize = "18px";
-      para.style.lineHeight = '1.45';
-      para.style.fontFamily = 'Iosevka Aile';
-    }
+    setStyles(para, {
+      fontSize: '1.2rem',
+      lineHeight: '1.45',
+      // fontFamily: 'Iosevka Aile'
+    });
   }
-}
 
-const main = () => {
+  // Normalize headlines
+  let headlines = document.querySelectorAll('.title');
+  for (let headline of headlines) {
+    setStyles(headline, {
+      fontSize: '1.35rem',
+      lineHeight: '1.1',
+      // fontFamily: 'Iosevka Aile'
+    });
+  }
+};
+
+const navigateToOldReddit = () => {
   if (top.location.hostname !== 'old.reddit.com') {
     top.location.hostname = 'old.reddit.com';
   }
-  else {
-    document.addEventListener('DOMContentLoaded', prettify);
-    if (document.referrer === "https://www.reddit.com/") { // don't wanna mess the experience otherwise
-      history.pushState({}, ''); // see notes for why
-      window.addEventListener('popstate', () => {
-        history.go(-2);
-      })
-    }
+};
+
+const main = () => {
+  document.addEventListener('DOMContentLoaded', () => {
+    prettify();
+    navigateToOldReddit();
+  });
+  window.addEventListener('beforeunload', navigateToOldReddit);
+  if (document.referrer === 'https://www.reddit.com/') {
+    history.pushState({}, '');
+    window.addEventListener('popstate', () => {
+      history.go(-2); // Removes the new Reddit URL from history
+    });
   }
-}
+};
 
 main();
-
-// rm filter
-/*
-old.reddit.com##.listingsignupbar.infobar
-old.reddit.com###header
-old.reddit.com##.login-form-side.login-form
-old.reddit.com##.submit-text.submit.sidebox > .morelink > .access-required.login-required
-old.reddit.com##.side
-old.reddit.com##.commentsignupbar.infobar
-old.reddit.com##.rounded.footer
-old.reddit.com##p.bottommenu:nth-of-type(1)
-old.reddit.com##p.bottommenu:nth-of-type(2)
-*/
