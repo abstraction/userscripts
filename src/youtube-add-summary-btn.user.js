@@ -7,6 +7,8 @@
 // @match        https://www.youtube.com/watch?v=*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
 // @grant        GM_addStyle
+// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/youtube-add-summary-btn.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/youtube-add-summary-btn.user.js
 // ==/UserScript==
 
 (function () {

@@ -3,8 +3,8 @@
 // @namespace    https://github.com/abstraction/userscripts
 // @description  Hypothesis annotator for Firefox and Firefox Android
 // @author       abstraction
-// @version      1.1.0
-// @match        http*://*/*
+// @version      2023-04-20
+// @match        *://*/*
 // @homepageURL  https://github.com/abstraction/userscripts
 // @homepage     https://github.com/abstraction/userscripts
 // @updateURL    https://github.com/abstraction/userscripts/blob/master/src/hypothesis.user.js
@@ -14,9 +14,8 @@
 // ==/UserScript==
 
 /**
- * Note to self:
- * With the new FF update, you will have to disable CSP fully via about:config to inject external scripts for CSP sites.
- * There is a workaround to do it via Tampermonkey,
+ * [SCRIPT IS BROKEN ATM]
+ * Note to self: With the new FF update, you will have to disable CSP fully via about:config to inject external scripts for CSP sites.
  */
 
 const hypo = function () {
