@@ -7,20 +7,22 @@
 // @match        https://html6.com/*
 // @run-at       document-start
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=html6.com
+// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/htmlg-cleaner.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/htmlg-cleaner.user.js
 // @grant        none
 // ==/UserScript==
 
 (function () {
-  "use strict";
+  'use strict';
 
-  document.addEventListener("DOMContentLoaded", (e) => {
-    document.querySelector("#mainCTA").remove();
-    document.querySelector(".wrapSense").remove();
-    document.querySelector("a.ctaLink")?.remove();
-    document.querySelector(".addthiszek").textContent = "--- PRO ---";
-    document.querySelector(".addthiszek").style.color = "white";
-    document.querySelector("#Tag_Manager_1").value = "div";
-    setTimeout(document.querySelector("#tagCheck31").click(), 1000);
+  document.addEventListener('DOMContentLoaded', (e) => {
+    document.querySelector('#mainCTA').remove();
+    document.querySelector('.wrapSense').remove();
+    document.querySelector('a.ctaLink')?.remove();
+    document.querySelector('.addthiszek').textContent = '--- PRO ---';
+    document.querySelector('.addthiszek').style.color = 'white';
+    document.querySelector('#Tag_Manager_1').value = 'div';
+    setTimeout(document.querySelector('#tagCheck31').click(), 1000);
   });
 
   // Function to replace the script
@@ -29,11 +31,11 @@
     originalScript.parentNode.removeChild(originalScript);
 
     // Create a new script element
-    var newScript = document.createElement("script");
-    newScript.type = "text/javascript";
+    var newScript = document.createElement('script');
+    newScript.type = 'text/javascript';
 
     // Set the new script content
-    newScript.src = "https://abstraction.github.io/random/six.js";
+    newScript.src = 'https://abstraction.github.io/random/six.js';
 
     // Append the new script to the head
     document.head.appendChild(newScript);
@@ -43,7 +45,7 @@
   var observer = new MutationObserver(function (mutations) {
     mutations.forEach(function (mutation) {
       mutation.addedNodes.forEach(function (node) {
-        if (node.tagName === "SCRIPT" && node.src.includes("html6.js")) {
+        if (node.tagName === 'SCRIPT' && node.src.includes('html6.js')) {
           replaceScript(node);
         }
       });
@@ -53,6 +55,6 @@
   // Start observing the document
   observer.observe(document.documentElement, {
     childList: true,
-    subtree: true,
+    subtree: true
   });
 })();
