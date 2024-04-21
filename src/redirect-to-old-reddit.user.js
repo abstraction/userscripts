@@ -1,16 +1,14 @@
 // ==UserScript==
-// @name         Redirect to old Reddit
+// @name         Goto Old Reddit
 // @namespace    https://github.com/abstraction/userscripts
 // @description  Old Reddit but a bit more pleasing.
 // @author       abstraction
-// @version      2024-01-13
-// @match        https://*.reddit.com*
-// @match        https://reddit.com*
+// @version      2024-04-22
+// @match        https://www.reddit.com/*
 // @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/redirect-to-old-reddit.user.js
 // @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/redirect-to-old-reddit.user.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=reddit.com
 // @run-at       document-start
-
 // ==/UserScript==
 
 const navigateToOldReddit = () => {
@@ -19,17 +17,15 @@ const navigateToOldReddit = () => {
   }
 };
 
-const main = () => {
-  document.addEventListener('DOMContentLoaded', () => {
-    navigateToOldReddit();
-  });
-  window.addEventListener('beforeunload', navigateToOldReddit);
-  if (document.referrer === 'https://www.reddit.com/') {
-    history.pushState({}, '');
-    window.addEventListener('popstate', () => {
-      history.go(-2); // Removes the new Reddit URL from history
-    });
-  }
-};
+navigateToOldReddit(); // Run immediately to redirect to old Reddit
 
-main();
+// Ensures redirection during tab close, refresh, or navigation away
+window.addEventListener('beforeunload', navigateToOldReddit);
+
+// If coming from new Reddit, modify the history state
+if (document.referrer === 'https://www.reddit.com/') {
+  history.pushState({}, ''); // Adds a state to the history stack
+  window.addEventListener('popstate', () => {
+    history.go(-2); // Navigate back two steps in the history, skipping new Reddit
+  });
+}
