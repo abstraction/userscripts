@@ -3,7 +3,7 @@
 // @namespace    https://github.com/abstraction/userscripts
 // @description  Hypothesis annotator for Firefox and Firefox Android
 // @author       abstraction
-// @version      2024-04-25
+// @version      2024-04-25.2
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hypothes.is
 // @homepageURL  https://github.com/abstraction/userscripts
@@ -40,18 +40,23 @@
     const button = document.createElement('button');
     Object.assign(button.style, {
       position: 'fixed',
-      top: '15px',
-      right: '15px',
+      top: '25px',
+      right: '20px',
       zIndex: '9999',
-      padding: '1rem',
-      fontSize: '1rem',
+      padding: '0', // in case browsers go brr with defaults
+      fontSize: '18px',
       backgroundColor: '#bd1c2b',
       color: '#fff',
       border: 'none',
-      borderRadius: '2rem',
+      borderRadius: '50%',
       cursor: 'pointer',
-      boxShadow: 'rgba(0, 0, 0, 0.2) 0px 4px 10px',
-      fontWeight: 'bolder'
+      boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+      fontWeight: 'bolder',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '40px',
+      width: '40px'
     });
     button.id = 'hypothesis-activation-btn';
     button.textContent = 'h.';
