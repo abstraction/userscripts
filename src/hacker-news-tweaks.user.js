@@ -12,14 +12,11 @@
 // @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/hacker-news-tweaks.user.js
 // ==/UserScript==
 
-const supriseFont = () =>
-  ['"Gotham Pro"', '"Iosevka Aile"'][Math.round(Math.random())];
-
 const styles = {
   base: {
     '*': {
-      'font-family': supriseFont() + ', Helvetica, sans-serif',
-      'font-size': '18px'
+      'font-family': '"Gotham Pro", Helvetica, sans-serif',
+      'font-size': '20px'
     },
     body: {
       margin: '0 auto'

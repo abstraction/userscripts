@@ -5,6 +5,11 @@
 // @author       abstraction
 // @version      2024-04-22
 // @match        https://www.reddit.com/*
+// @exclude      https://*.reddit.com/poll/*
+// @exclude      https://*.reddit.com/gallery/*
+// @exclude      https://www.reddit.com/media*
+// @exclude      https://chat.reddit.com/*
+// @exclude      https://www.reddit.com/appeal*
 // @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/redirect-to-old-reddit.user.js
 // @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/redirect-to-old-reddit.user.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=reddit.com
