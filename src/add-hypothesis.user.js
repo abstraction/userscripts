@@ -3,11 +3,10 @@
 // @namespace    https://github.com/abstraction/userscripts
 // @description  Hypothesis annotator for Firefox and Firefox Android
 // @author       abstraction
-// @version      2024-04-25.2
+// @version      2024-07-02
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hypothes.is
 // @homepageURL  https://github.com/abstraction/userscripts
-// @homepage     https://github.com/abstraction/userscripts
 // @updateURL    https://github.com/abstraction/userscripts/blob/master/src/add-hypothesis.user.js
 // @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/add-hypothesis.user.js
 // @grant        none
@@ -35,7 +34,6 @@
 (function () {
   'use strict';
 
-  // Create and add the Hypothesis button to the page
   function addHypothesisButton() {
     const button = document.createElement('button');
     Object.assign(button.style, {
@@ -86,6 +84,7 @@
             node.tagName &&
             node.tagName.toLowerCase() === 'hypothesis-sidebar'
           ) {
+            removeButton(); // Remove button immediately upon detecting sidebar
             observeSidebar(node.shadowRoot.childNodes);
             observer.disconnect();
             return;
@@ -102,7 +101,6 @@
     if (!sidebarContainer) return;
     const observer = new MutationObserver(() => {
       if (sidebarContainer.style.display !== 'none') {
-        removeButton();
         removeScript();
         observer.disconnect();
       }
