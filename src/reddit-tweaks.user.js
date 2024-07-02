@@ -4,7 +4,7 @@
 // @description  Reddit with a bit of edit
 // @author       abstraction
 // @version      2024-07-02
-// @match        https://old.reddit.com/*/comments/*
+// @match        https://old.reddit.com/*
 // @homepageURL  https://github.com/abstraction/userscripts
 // @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/reddit-tweaks.user.js
 // @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/reddit-tweaks.user.js
@@ -14,155 +14,145 @@
 (function () {
   'use strict';
 
-  // Utility function to set multiple styles on an element
-  const setStyles = (element, styles) => {
-    Object.entries(styles).forEach(([key, value]) => {
-      element.style[key] = value;
-    });
+  // For future self: We can use maxToucPoints to detect for mobile as well, its
+  // more modern but there is a caveat where it returns 256 for non-touch
+  // devices in Windows: https://stackoverflow.com/q/55833326
+  const isMobileDevice = () => window.matchMedia('(max-width: 768px)').matches ||
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+
+  const setMobileViewport = () => {
+    const viewportMeta = document.querySelector('meta[name="viewport"]') || document.createElement('meta');
+    viewportMeta.name = "viewport";
+    viewportMeta.content = "width=device-width, initial-scale=1.0";
+    if (!document.querySelector('meta[name="viewport"]')) {
+      document.head.appendChild(viewportMeta);
+    }
   };
 
-  // Simplified function for removing elements
-  const removeElement = (selector) => {
+  const createToggleButton = (sideDiv) => {
+    const button = document.createElement('button');
+    Object.assign(button.style, {
+      position: 'fixed', top: '10px', left: '10px', zIndex: '1000'
+    });
+    button.innerHTML = '→';
+    button.onclick = () => {
+      sideDiv.style.display = sideDiv.style.display === 'none' ? 'block' : 'none';
+      button.innerHTML = sideDiv.style.display === 'none' ? '→' : '←';
+    };
+    document.body.appendChild(button);
+  };
+
+  const applyMobileStyles = () => {
+    const sideDiv = document.querySelector('.side');
+    if (sideDiv) {
+      sideDiv.style.display = 'none';
+      document.head.appendChild(Object.assign(document.createElement('style'), {
+        textContent: `
+                    .side { width: auto !important; }
+                    body .comment { padding: 2px 0 0 4px !important; }
+                    .panestack-title { margin: 10px auto 10px 10px; }
+                    .commentarea .menuarea, .usertext-edit { width: auto !important; }
+                    .usertext-edit textarea { width: 90% !important; }
+                `
+      }));
+      createToggleButton(sideDiv);
+    }
+  };
+
+  const setStyles = (element, styles) => Object.assign(element.style, styles);
+
+  const removeElements = (...selectors) => selectors.forEach(selector => {
     const element = document.querySelector(selector);
-    if (element) {
-      element.remove();
-    }
-  };
-
-  // Remove unnecessary elements
-  removeElement('section.infobar');
-  removeElement('.reddit-infobar');
-  removeElement('.side');
-
-  // Comments on right
-  setStyles(document.querySelector('.content'), {
-    display: 'flex',
-    flexDirection: 'row-reverse',
-    margin: 0
+    if (element) element.remove();
   });
 
-  // ok
-  setStyles(document.querySelector('.thing'), {
-    position: 'sticky',
-    top: '2rem'
-  });
+  const enhanceComments = () => {
+    document.querySelectorAll('.commentarea .md p').forEach(comment =>
+      setStyles(comment, { 'font-size': '1.2rem', 'line-height': '1.6' }));
 
-  // ok
-  setStyles(document.querySelector('body'), {});
+    document.querySelectorAll('.comment').forEach(container => {
+      setStyles(container, {
+        'background-color': '#f6f6f6',
+        padding: '10px',
+        'border-radius': '5px',
+        'margin-bottom': '10px'
+      });
 
-  //   setStyles(
-  //     document.querySelector(
-  //       ".sitetable > .pinnable-placeholder > .pinnable-content"
-  //     ),
-  //     {
-  //       position: "sticky",
-  //       top: "2rem",
-  //     }
-  //   );
-
-  // Function to handle class changes
-  const handleClassChange = (mutationsList) => {
-    for (let mutation of mutationsList) {
-      if (
-        mutation.type === 'attributes' &&
-        mutation.attributeName === 'class'
-      ) {
-        let element = mutation.target;
-        // Check if the specific class is added and take action
-        if (element.classList.contains('pinned')) {
-          // Remove the class or modify it as needed
-          element.classList.remove('pinned');
+      container.addEventListener('click', () => {
+        const commentBody = container.querySelector('.md');
+        if (commentBody) {
+          const isVisible = commentBody.style.display !== 'none';
+          commentBody.style.display = isVisible ? 'none' : '';
+          container.style.backgroundColor = isVisible ? '#e6e6e6' : '#f6f6f6';
         }
-      }
-    }
-  };
-
-  // Create an observer instance
-  const observer = new MutationObserver(handleClassChange);
-
-  // Observer configuration
-  const config = {
-    attributes: true,
-    subtree: true,
-    attributeFilter: ['class']
-  };
-
-  // Start observing the target node for configured mutations
-  observer.observe(document.body, config);
-
-  //   document
-  //     .querySelector(".sitetable > .pinnable-placeholder > .pinnable-content")
-  //     .classList.remove("pinnable-content");
-
-  // Enhance comment appearance
-  document.querySelectorAll('.commentarea .md p').forEach((comment) => {
-    setStyles(comment, {
-      'font-size': '1.2rem',
-      'line-height': '1.6'
-    });
-  });
-
-  // Function to create toggle links for comments
-  const createToggleLinks = (parent) => {
-    const createLink = (text, action) => {
-      const link = document.createElement('a');
-      link.href = '#';
-      link.textContent = text;
-      link.style.marginRight = '10px';
-      link.addEventListener('click', (event) => {
-        event.preventDefault();
-        action(parent);
       });
-      return link;
-    };
 
-    const toggleChildren = (parent, display, bgColor) => {
-      parent.querySelectorAll('.child .comment').forEach((child) => {
-        child.querySelector('.md').style.display = display;
-        child.style.backgroundColor = bgColor;
-      });
-    };
+      const createToggleLink = (text, action) => {
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = text;
+        link.style.marginRight = '10px';
+        link.onclick = (e) => {
+          e.preventDefault();
+          action(container);
+        };
+        return link;
+      };
 
-    const collapseLink = createLink('Collapse All', (parent) =>
-      toggleChildren(parent, 'none', '#e6e6e6')
-    );
-    const expandLink = createLink('Expand All', (parent) =>
-      toggleChildren(parent, '', '#f6f6f6')
-    );
+      const toggleChildren = (display, bgColor) => {
+        container.querySelectorAll('.child .comment').forEach(child => {
+          child.querySelector('.md').style.display = display;
+          child.style.backgroundColor = bgColor;
+        });
+      };
 
-    return [collapseLink, expandLink];
-  };
+      const collapseLink = createToggleLink('Collapse All', () => toggleChildren('none', '#e6e6e6'));
+      const expandLink = createToggleLink('Expand All', () => toggleChildren('', '#f6f6f6'));
 
-  // Enhance and add interactivity to comment containers
-  document.querySelectorAll('.comment').forEach((container) => {
-    setStyles(container, {
-      'background-color': '#f6f6f6',
-      padding: '10px',
-      'border-radius': '5px',
-      'margin-bottom': '10px'
-    });
-
-    container.addEventListener('click', (event) => {
-      const commentBody = container.querySelector('.md');
-
-      if (commentBody) {
-        const isVisible = commentBody.style.display !== 'none';
-        commentBody.style.display = isVisible ? 'none' : '';
-        container.style.backgroundColor = isVisible ? '#e6e6e6' : '#f6f6f6';
+      const tagline = container.querySelector('.tagline');
+      if (tagline) {
+        tagline.appendChild(collapseLink);
+        tagline.appendChild(expandLink);
       }
     });
 
-    // Append toggle links
-    const [collapseLink, expandLink] = createToggleLinks(container);
-    const tagline = container.querySelector('.tagline');
-    if (tagline) {
-      tagline.appendChild(collapseLink);
-      tagline.appendChild(expandLink);
-    }
-  });
+    document.querySelectorAll('.comment a').forEach(link =>
+      link.addEventListener('click', e => e.stopPropagation()));
+  };
 
-  // Prevent comment collapse when clicking on links within comments
-  document.querySelectorAll('.comment a').forEach((link) => {
-    link.addEventListener('click', (event) => event.stopPropagation());
-  });
+  const applyDesktopStyles = () => {
+    removeElements('section.infobar', '.reddit-infobar', '.side');
+
+    setStyles(document.querySelector('.content'), {
+      display: 'flex',
+      flexDirection: 'row-reverse',
+      margin: 0
+    });
+
+    setStyles(document.querySelector('.thing'), {
+      position: 'sticky',
+      top: '2rem'
+    });
+
+    new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const element = mutation.target;
+          if (element.classList.contains('pinned')) {
+            element.classList.remove('pinned');
+          }
+        }
+      });
+    }).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+
+    enhanceComments();
+  };
+
+  if (isMobileDevice()) {
+    setMobileViewport();
+    applyMobileStyles();
+  } else if (/^https:\/\/old\.reddit\.com\/.*\/comments\/.*/.test(window.location.href)) {
+    applyDesktopStyles();
+  }
 })();
