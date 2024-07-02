@@ -7,8 +7,8 @@
 // @grant        GM_addStyle
 // @run-at       document-start
 // @homepageURL  https://github.com/abstraction/userscripts/
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/external/ext-select-text-inside-link.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/external/ext-select-text-inside-link.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/external/ext-select-text-inside-link.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/external/ext-select-text-inside-link.user.js
 // ==/UserScript==
 
 // const IS_FIREFOX = typeof InstallTrigger !== 'undefined';

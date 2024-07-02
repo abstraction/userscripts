@@ -29,8 +29,8 @@
 // @compatible   chrome Tampermonkey latest
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDE2IDE2Ij4gPHBhdGggZmlsbD0iIzRjNGM0ZCIgZD0iTTMuNSAxYS41LjUgMCAxIDAgMCAxSDR2OWgtLjVhLjUuNSAwIDAgMCAwIDFoNy44NTVhLjUuNSAwIDAgMCAuNDc1LS4xODQuNS41IDAgMCAwIC4xMDYtLjM5OFYxMC41YS41LjUgMCAxIDAtMSAwdi41SDZWMmguNWEuNS41IDAgMSAwIDAtMWgtM3oiLz4gPHBhdGggZmlsbD0iIzQ1YTFmZiIgZD0iTTIuNSAxNGExIDEgMCAxIDAgMCAyaDExYTEgMSAwIDEgMCAwLTJoLTExeiIvPiA8L3N2Zz4=
 // @homepageURL  https://github.com/abstraction/userscripts/
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/external/ext-linkify.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/external/ext-linkify.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/external/ext-linkify.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/external/ext-linkify.user.js
 // ==/UserScript==
 
 var optionsFuzzyIpLabel = 'Match ambiguous IP addresses.';

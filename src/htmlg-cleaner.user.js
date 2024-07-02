@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         Script Replacer for html6.com
-// @namespace    http://tampermonkey.net/
-// @version      2024-01-13
+// @version      2024-07-02
 // @description  Replace script.js on Example.com
 // @author       You
 // @match        https://html6.com/*
 // @run-at       document-start
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=html6.com
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/htmlg-cleaner.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/htmlg-cleaner.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/htmlg-cleaner.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/htmlg-cleaner.user.js
 // @grant        none
 // ==/UserScript==
 

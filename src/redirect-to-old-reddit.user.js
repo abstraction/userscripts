@@ -3,7 +3,7 @@
 // @namespace    https://github.com/abstraction/userscripts
 // @description  Old Reddit but a bit more pleasing.
 // @author       abstraction
-// @version      2024-04-22
+// @version      2024-07-02
 // @match        https://www.reddit.com/*
 // @exclude      https://*.reddit.com/poll/*
 // @exclude      https://*.reddit.com/gallery/*

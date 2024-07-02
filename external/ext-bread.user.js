@@ -9,8 +9,8 @@
 // @grant        GM_getValue
 // @run-at       document-start
 // @homepageURL  https://github.com/abstraction/userscripts/
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/external/ext-bread.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/external/ext-bread.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/external/ext-bread.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/external/ext-bread.user.js
 // ==/UserScript==
 
 /* source: https://github.com/tobyxdd/bread (v1.0.5) */

@@ -7,8 +7,8 @@
 // @icon           https://www.google.com/s2/favicons?sz=64&domain=summarize.tech
 // @grant          none
 // @homepageURL    https://github.com/abstraction/userscripts/
-// @updateURL      https://github.com/abstraction/userscripts/blob/master/src/silently-auto-clear-site-data.user.js
-// @downloadURL    https://github.com/abstraction/userscripts/blob/master/src/silently-auto-clear-site-data.user.js
+// @updateURL      https://github.com/abstraction/userscripts/raw/master/src/silently-auto-clear-site-data.user.js
+// @downloadURL    https://github.com/abstraction/userscripts/raw/master/src/silently-auto-clear-site-data.user.js
 // ==/UserScript==
 
 (function () {

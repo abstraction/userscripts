@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         Continuous Gradient Text
 // @match        *://*/*
-// @version      1.0
+// @version      2024-07-02
 // @author       abstraction
 // @description  Applies a continuous gradient to text across lines, enhancing readability.
 // @grant        none
 // @run-at       document-end
 // @homepageURL  https://github.com/abstraction/userscripts
 // @homepage     https://github.com/abstraction/userscripts
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/mimic-beeline.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/mimic-beeline.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/mimic-beeline.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/mimic-beeline.user.js
 // ==/UserScript==
 
 (function () {

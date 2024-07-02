@@ -3,8 +3,9 @@
 // @namespace    https://github.com/abstraction/userscripts
 // @description  Reddit with a bit of edit
 // @author       abstraction
-// @version      2024-01-13
+// @version      2024-07-02
 // @match        https://old.reddit.com/*/comments/*
+// @homepageURL  https://github.com/abstraction/userscripts
 // @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/reddit-tweaks.user.js
 // @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/reddit-tweaks.user.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=reddit.com

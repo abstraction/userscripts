@@ -7,8 +7,8 @@
 // @icon          https://www.google.com/s2/favicons?sz=64&domain=youtube.com
 // @grant         GM_addStyle
 // @homepageURL   https://github.com/abstraction/userscripts/
-// @updateURL     https://github.com/abstraction/userscripts/blob/master/src/youtube-add-summary-btn.user.js
-// @downloadURL   https://github.com/abstraction/userscripts/blob/master/src/youtube-add-summary-btn.user.js
+// @updateURL     https://github.com/abstraction/userscripts/raw/master/src/youtube-add-summary-btn.user.js
+// @downloadURL   https://github.com/abstraction/userscripts/raw/master/src/youtube-add-summary-btn.user.js
 // ==/UserScript==
 
 (function () {

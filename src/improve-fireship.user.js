@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Improve Fireship
-// @version      2024.1
+// @version    2024-07-02
 // @description  Improves Fireship by providing access
 // @match        https://fireship.io/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fireship.io
 // @grant        none
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/freeship.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/freeship.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/freeship.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/freeship.user.js
 // ==/UserScript==
 
 const mutationObserver = new MutationObserver(() => {

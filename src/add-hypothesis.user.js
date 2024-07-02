@@ -7,8 +7,8 @@
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=hypothes.is
 // @homepageURL  https://github.com/abstraction/userscripts
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/add-hypothesis.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/add-hypothesis.user.js
+// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/add-hypothesis.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/add-hypothesis.user.js
 // @grant        none
 // @run-at       document-body
 // @sandbox      JavaScript
