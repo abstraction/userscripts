@@ -8,8 +8,9 @@
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @run-at       document-start
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/ext-bread.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/ext-bread.user.js
+// @homepageURL  https://github.com/abstraction/userscripts/
+// @updateURL    https://github.com/abstraction/userscripts/blob/master/external/ext-bread.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/blob/master/external/ext-bread.user.js
 // ==/UserScript==
 
 /* source: https://github.com/tobyxdd/bread (v1.0.5) */
@@ -24,9 +25,9 @@ let minWordLength = GM_getValue('minWordLength') || 4, // Minimum word length
     GM_getValue('breadSites') ||
     {
       /* Configure sites bread will be triggered on
-	Apply to domains including "domain_part", restrict bread to a node via a "css_selector" (or false), apply custom CSS "custom_css"
-	"domain_part" : "css_selector",
-	"domain_part" : ["css_selector", "custom_css"],
+  Apply to domains including "domain_part", restrict bread to a node via a "css_selector" (or false), apply custom CSS "custom_css"
+  "domain_part" : "css_selector",
+  "domain_part" : ["css_selector", "custom_css"],
 */
     },
   insertTextBefore = (text, node, bold) => {

@@ -6,8 +6,9 @@
 // @match        *://*/*
 // @grant        GM_addStyle
 // @run-at       document-start
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/ext-select-text-inside-link.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/ext-select-text-inside-link.user.js
+// @homepageURL  https://github.com/abstraction/userscripts/
+// @updateURL    https://github.com/abstraction/userscripts/blob/master/external/ext-select-text-inside-link.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/blob/master/external/ext-select-text-inside-link.user.js
 // ==/UserScript==
 
 // const IS_FIREFOX = typeof InstallTrigger !== 'undefined';
@@ -175,7 +176,7 @@ function createMovementTracker() {
       // FIXME: should we assume that the array contains initial values [0, 0]?
       output.push(
         Math.abs(moves[index][i] - moves[(index + 1) % 3][i]) +
-          Math.abs(moves[(index + 1) % 3][i] - moves[(index + 2) % 3][i])
+        Math.abs(moves[(index + 1) % 3][i] - moves[(index + 2) % 3][i])
       );
     }
     return output;

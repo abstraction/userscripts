@@ -28,8 +28,9 @@
 // @compatible   firefox Tampermonkey latest
 // @compatible   chrome Tampermonkey latest
 // @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDE2IDE2Ij4gPHBhdGggZmlsbD0iIzRjNGM0ZCIgZD0iTTMuNSAxYS41LjUgMCAxIDAgMCAxSDR2OWgtLjVhLjUuNSAwIDAgMCAwIDFoNy44NTVhLjUuNSAwIDAgMCAuNDc1LS4xODQuNS41IDAgMCAwIC4xMDYtLjM5OFYxMC41YS41LjUgMCAxIDAtMSAwdi41SDZWMmguNWEuNS41IDAgMSAwIDAtMWgtM3oiLz4gPHBhdGggZmlsbD0iIzQ1YTFmZiIgZD0iTTIuNSAxNGExIDEgMCAxIDAgMCAyaDExYTEgMSAwIDEgMCAwLTJoLTExeiIvPiA8L3N2Zz4=
-// @updateURL    https://github.com/abstraction/userscripts/blob/master/src/ext-linkify.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/blob/master/src/ext-linkify.user.js
+// @homepageURL  https://github.com/abstraction/userscripts/
+// @updateURL    https://github.com/abstraction/userscripts/blob/master/external/ext-linkify.user.js
+// @downloadURL  https://github.com/abstraction/userscripts/blob/master/external/ext-linkify.user.js
 // ==/UserScript==
 
 var optionsFuzzyIpLabel = 'Match ambiguous IP addresses.';
@@ -1044,7 +1045,7 @@ function bindControls({
   alert: _alert = alert,
   confirm: _confirm = confirm,
   prompt: _prompt = prompt,
-  getMessage = () => {},
+  getMessage = () => { },
   getNewScope = () => ''
 }) {
   const CONTROL_METHODS = {
@@ -1256,7 +1257,7 @@ function createBinding({
 
 function createUI({
   body,
-  getMessage = () => {},
+  getMessage = () => { },
   toolbar = true,
   navbar = true,
   keyPrefix = 'pref-',
@@ -1276,18 +1277,18 @@ function createUI({
 
   root.append(
     /*#__PURE__*/ createElement(
-      'div',
-      {
-        class: controlPrefix + 'body'
-      },
-      body.map((item) => {
-        if (!item.hLevel) {
-          item.hLevel = 3;
-        }
+    'div',
+    {
+      class: controlPrefix + 'body'
+    },
+    body.map((item) => {
+      if (!item.hLevel) {
+        item.hLevel = 3;
+      }
 
-        return createItem(item);
-      })
-    )
+      return createItem(item);
+    })
+  )
   );
   return root;
 
@@ -1368,13 +1369,13 @@ function createUI({
     let input;
     const onChange = p.validate
       ? (e) => {
-          try {
-            p.validate(e.target.value);
-            e.target.setCustomValidity('');
-          } catch (err) {
-            e.target.setCustomValidity(err.message || String(err));
-          }
+        try {
+          p.validate(e.target.value);
+          e.target.setCustomValidity('');
+        } catch (err) {
+          e.target.setCustomValidity(err.message || String(err));
         }
+      }
       : null;
 
     if (p.type === 'select') {
@@ -1388,12 +1389,12 @@ function createUI({
         },
         Object.entries(p.options).map(([value, label]) =>
           /*#__PURE__*/ createElement(
-            'option',
-            {
-              value: value
-            },
-            label
-          )
+          'option',
+          {
+            value: value
+          },
+          label
+        )
         )
       );
     } else if (p.type === 'textarea') {
@@ -1425,13 +1426,13 @@ function createUI({
       ),
       p.learnMore &&
         /*#__PURE__*/ createElement(LearnMore, {
-          url: p.learnMore
-        }),
+        url: p.learnMore
+      }),
       input,
       p.help &&
         /*#__PURE__*/ createElement(Help, {
-          content: p.help
-        })
+        content: p.help
+      })
     );
   }
 
@@ -1450,12 +1451,12 @@ function createUI({
       ),
       p.learnMore &&
         /*#__PURE__*/ createElement(LearnMore, {
-          url: p.learnMore
-        }),
+        url: p.learnMore
+      }),
       p.help &&
         /*#__PURE__*/ createElement(Help, {
-          content: p.help
-        }),
+        content: p.help
+      }),
       p.children.map((c) => {
         c.parentKey = p.key;
         return createCheckbox(inheritProp(p, c));
@@ -1510,24 +1511,24 @@ function createUI({
       ),
       p.learnMore &&
         /*#__PURE__*/ createElement(LearnMore, {
-          url: p.learnMore
-        }),
+        url: p.learnMore
+      }),
       p.help &&
         /*#__PURE__*/ createElement(Help, {
-          content: p.help
-        }),
+        content: p.help
+      }),
       p.children &&
         /*#__PURE__*/ createElement(
-          'fieldset',
-          {
-            class: controlPrefix + 'checkbox-children',
-            dataset: {
-              bindTo: p.parentKey || p.key,
-              bindToValue: p.value
-            }
-          },
-          p.children.map((c) => createItem(inheritProp(p, c)))
-        )
+        'fieldset',
+        {
+          class: controlPrefix + 'checkbox-children',
+          dataset: {
+            bindTo: p.parentKey || p.key,
+            bindToValue: p.value
+          }
+        },
+        p.children.map((c) => createItem(inheritProp(p, c)))
+      )
     );
   }
 
@@ -1551,8 +1552,8 @@ function createUI({
         ),
         p.help &&
           /*#__PURE__*/ createElement(Help, {
-            content: p.help
-          }),
+          content: p.help
+        }),
         p.children && p.children.map((c) => createItem(inheritProp(p, c)))
       )
     );
@@ -3231,14 +3232,14 @@ var table = {
 };
 
 var RE = {
-    PROTOCOL: '([a-z][-a-z*]+://)?',
-    USER: '(?:([\\w:.+-]+)@)?',
-    DOMAIN_UNI: `([a-z0-9-.\\u00A0-\\uFFFF]+\\.[a-z0-9-${chars}]{1,${maxLength}})`,
-    DOMAIN: `([a-z0-9-.]+\\.[a-z0-9-]{1,${maxLength}})`,
-    PORT: '(:\\d+\\b)?',
-    PATH_UNI: '([/?#]\\S*)?',
-    PATH: "([/?#][\\w-.~!$&*+;=:@%/?#(),'\\[\\]]*)?"
-  },
+  PROTOCOL: '([a-z][-a-z*]+://)?',
+  USER: '(?:([\\w:.+-]+)@)?',
+  DOMAIN_UNI: `([a-z0-9-.\\u00A0-\\uFFFF]+\\.[a-z0-9-${chars}]{1,${maxLength}})`,
+  DOMAIN: `([a-z0-9-.]+\\.[a-z0-9-]{1,${maxLength}})`,
+  PORT: '(:\\d+\\b)?',
+  PATH_UNI: '([/?#]\\S*)?',
+  PATH: "([/?#][\\w-.~!$&*+;=:@%/?#(),'\\[\\]]*)?"
+},
   TLD_TABLE = table;
 
 function regexEscape(text) {
@@ -3736,10 +3737,10 @@ class Linkifier extends Events {
     };
     // Generate linkified ranges.
     var walker = document.createTreeWalker(
-        this.root,
-        NodeFilter.SHOW_TEXT + NodeFilter.SHOW_ELEMENT,
-        filter
-      ),
+      this.root,
+      NodeFilter.SHOW_TEXT + NodeFilter.SHOW_ELEMENT,
+      filter
+    ),
       start,
       end,
       current,
@@ -3918,7 +3919,7 @@ var load = {
     processedNodes.add(document.body);
     await linkify({ ...options, root: document.body, recursive: true });
   },
-  disable: () => {}
+  disable: () => { }
 };
 
 let options$1;
