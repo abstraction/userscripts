@@ -15,7 +15,8 @@ A highly-optimized, modern userscript that enhances the YouTube browsing experie
 ## Installation
 
 1. Install a userscript manager like [Tampermonkey](https://www.tampermonkey.net/) or [Violentmonkey](https://violentmonkey.github.io/).
-2. Click the following link to install the script:
+2. The ready-to-use compiled file can be found locally in the `dist` folder: [dist/youtube-creme.user.js](dist/youtube-creme.user.js).
+3. If viewing on GitHub, you can click the link below to install the script directly:
    [Install YouTube Creme](https://raw.githubusercontent.com/abstraction/userscripts/master/packages/youtube-creme/dist/youtube-creme.user.js)
 
 ## Development
