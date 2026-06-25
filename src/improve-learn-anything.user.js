@@ -5,8 +5,8 @@
 // @author       abstraction
 // @match        https://learn-anything.xyz/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=learn-anything.xyz
-// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/improve-learn-anything.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/improve-learn-anything.user.js
+// @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/improve-learn-anything.user.js
+// @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/improve-learn-anything.user.js
 // @grant        none
 // ==/UserScript==
 

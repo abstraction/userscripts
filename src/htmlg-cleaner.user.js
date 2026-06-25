@@ -6,8 +6,8 @@
 // @match        https://html6.com/*
 // @run-at       document-start
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=html6.com
-// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/htmlg-cleaner.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/htmlg-cleaner.user.js
+// @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/htmlg-cleaner.user.js
+// @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/htmlg-cleaner.user.js
 // @grant        none
 // ==/UserScript==
 

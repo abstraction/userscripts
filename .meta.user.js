@@ -7,6 +7,9 @@
 // @match           <>
 // @icon            https://www.google.com/s2/favicons?sz=64&domain=CHANGE_TO_DOMAIN
 // @homepageURL     https://github.com/abstraction/userscripts
+// @supportURL      https://github.com/abstraction/userscripts/issues
 // @updateURL       https://github.com/abstraction/userscripts/raw/master/src/<>.user.js
 // @downloadURL     https://github.com/abstraction/userscripts/raw/master/src/<>.user.js
+// @grant           none
+// @run-at          document-idle
 // ==/UserScript==

@@ -8,8 +8,8 @@
 // @run-at       document-start
 // @match        https://news.ycombinator.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=reddit.com
-// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/hacker-news-tweaks.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/hacker-news-tweaks.user.js
+// @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/hacker-news-tweaks.user.js
+// @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/hacker-news-tweaks.user.js
 // ==/UserScript==
 
 const styles = {

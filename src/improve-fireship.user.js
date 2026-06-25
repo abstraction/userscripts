@@ -5,8 +5,8 @@
 // @match        https://fireship.io/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=fireship.io
 // @grant        none
-// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/freeship.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/freeship.user.js
+// @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/improve-fireship.user.js
+// @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/improve-fireship.user.js
 // ==/UserScript==
 
 const mutationObserver = new MutationObserver(() => {

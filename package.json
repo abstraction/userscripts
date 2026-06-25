@@ -1,0 +1,7 @@
+{
+  "name": "userscripts",
+  "private": true,
+  "scripts": {
+    "new:vanilla": "./scripts/create-vanilla.sh"
+  }
+}

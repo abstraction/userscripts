@@ -8,8 +8,8 @@
 // @run-at       document-end
 // @homepageURL  https://github.com/abstraction/userscripts
 // @homepage     https://github.com/abstraction/userscripts
-// @updateURL    https://github.com/abstraction/userscripts/raw/master/src/mimic-beeline.user.js
-// @downloadURL  https://github.com/abstraction/userscripts/raw/master/src/mimic-beeline.user.js
+// @updateURL    https://raw.githubusercontent.com/abstraction/userscripts/master/src/mimic-beeline.user.js
+// @downloadURL  https://raw.githubusercontent.com/abstraction/userscripts/master/src/mimic-beeline.user.js
 // ==/UserScript==
 
 (function () {
