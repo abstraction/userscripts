@@ -13,8 +13,14 @@ import * as RatingBarModule from './features/ratingBar';
 import * as VideoFilterModule from './features/videoFilter';
 import * as DurationFilterModule from './features/durationFilter';
 import * as SeenVideosModule from './features/seenVideos';
+import * as DeclutterModule from './features/declutter';
+import { setupRedirects } from './features/redirects';
+import { initPlayerTweaks } from './features/playerTweaks';
+import { initCommentFilter } from './features/commentFilter';
+import { initGridReflow } from './features/gridReflow';
 
 import { SettingsMenu } from './ui/SettingsMenu';
+import { initMastheadButton } from './ui/masthead';
 import { Logger } from './utils/logger';
 
 const settings = loadSettings();
@@ -77,6 +83,17 @@ function processNewThumbnails() {
       // Find the video ID directly from the element or its parent
       let videoId: string | null = null;
       
+      // Short-circuit decluttered videos
+      if (settings.declutter && DeclutterModule.isThumbnailHiddenByDeclutter(thumbnailElement, settings.declutter)) {
+        if (!thumbnailElement.hasAttribute('data-yte-hidden-by-us')) {
+          thumbnailElement.setAttribute('data-yte-hidden-by-us', 'true');
+          Logger.debug(`[Main] Skipping hidden thumbnail`, thumbnailElement);
+        }
+        return;
+      } else if (thumbnailElement.hasAttribute('data-yte-hidden-by-us')) {
+        thumbnailElement.removeAttribute('data-yte-hidden-by-us');
+      }
+
       // 1. Check data attribute
       videoId = thumbnailElement.getAttribute("data-yte-video-id");
       
@@ -112,57 +129,77 @@ function processNewThumbnails() {
     });
 }
 
+function openSettings() {
+  const host = document.createElement('div');
+  host.id = 'yte-settings-root';
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  root.render(
+    <SettingsMenu initialSettings={settings} onClose={() => {
+      root.unmount();
+      host.remove();
+    }} />
+  );
+}
+
 function main() {
-  // 1. Setup styles
-  Logger.info("Initializing styles and color settings");
-  applyColorSettings(settings);
-  applyStyles(settings);
+  const init = () => {
+    // 1. Setup styles
+    Logger.info("Initializing styles and color settings");
+    applyColorSettings(settings);
+    applyStyles(settings);
+    if (settings.declutter) {
+      DeclutterModule.applyDeclutterStyles(settings.declutter);
+      setupRedirects(settings.declutter);
+      initPlayerTweaks(settings.declutter);
+      initCommentFilter(settings.declutter);
+      initGridReflow(settings.declutter);
+    }
 
-  // 2. Register callbacks
-  Logger.info("Registering feature modules");
-  registerDomMutationCallback(() => {
-    if (settings.videoFilter.enabled) {
-      VideoFilterModule.processViewsFilter(settings.videoFilter);
-    }
-    
-    const needsApiData = (settings.ratingBar.enabled && (settings.ratingBar.height !== 0 || settings.ratingBar.showStatsText)) || 
-                         (settings.videoFilter.enabled && settings.videoFilter.minRatingPercent > 0);
-    if (needsApiData) {
-      processNewThumbnails();
-    }
-    if (settings.durationFilter.enabled) {
-      DurationFilterModule.processDurationFilter(settings.durationFilter);
-    }
-    if (settings.seenVideos.enabled) {
-      SeenVideosModule.processSeenVideos(settings.seenVideos);
-    }
-    
-    // Clean up empty shelves
-    const shelves = document.querySelectorAll<HTMLElement>(SELECTORS.shelves);
-    for (const shelf of shelves) {
-      const visibleVideos = shelf.querySelectorAll(SELECTORS.visibleVideosInShelf);
-      if (visibleVideos.length === 0) {
-        shelf.style.display = "none";
+    // 2. Register callbacks
+    Logger.info("Registering feature modules");
+    registerDomMutationCallback(() => {
+      if (settings.videoFilter.enabled) {
+        VideoFilterModule.processViewsFilter(settings.videoFilter);
       }
-    }
-  });
+      
+      const needsApiData = (settings.ratingBar.enabled && (settings.ratingBar.height !== 0 || settings.ratingBar.showStatsText)) || 
+                           (settings.videoFilter.enabled && settings.videoFilter.minRatingPercent > 0);
+      if (needsApiData) {
+        processNewThumbnails();
+      }
+      if (settings.durationFilter.enabled) {
+        DurationFilterModule.processDurationFilter(settings.durationFilter);
+      }
+      if (settings.seenVideos.enabled) {
+        SeenVideosModule.processSeenVideos(settings.seenVideos);
+      }
+      
+      // Clean up empty shelves
+      const shelves = document.querySelectorAll<HTMLElement>(SELECTORS.shelves);
+      for (const shelf of shelves) {
+        const visibleVideos = shelf.querySelectorAll(SELECTORS.visibleVideosInShelf);
+        if (visibleVideos.length === 0) {
+          shelf.style.display = "none";
+        }
+      }
+    });
 
-  // 3. Start Observer
-  initObserver();
+    // 3. Start Observer
+    initObserver();
 
-  // 4. Hook up Settings Menu
-  GM_registerMenuCommand("Settings...", () => {
-    const host = document.createElement('div');
-    host.id = 'yte-settings-root';
-    document.body.appendChild(host);
-    const root = createRoot(host);
-    root.render(
-      <SettingsMenu initialSettings={settings} onClose={() => {
-        root.unmount();
-        host.remove();
-      }} />
-    );
-  });
+    // 4. Hook up Settings Menu
+    GM_registerMenuCommand("Settings...", openSettings);
+
+    // 5. Inject settings button into YouTube masthead
+    initMastheadButton(openSettings);
+  };
+
+  if (document.body && document.head) {
+    init();
+  } else {
+    document.addEventListener("DOMContentLoaded", init);
+  }
 }
 
 main();

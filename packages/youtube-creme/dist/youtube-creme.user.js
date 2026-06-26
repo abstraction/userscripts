@@ -14,6 +14,7 @@
 // @exclude      *://music.youtube.com/*
 // @exclude      *://studio.youtube.com/*
 // @connect      returnyoutubedislikeapi.com
+// @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_setValue
@@ -23,6 +24,15 @@
 
 (function() {
 	"use strict";
+	var s = new Set();
+	var _css = async (t) => {
+		if (s.has(t)) return;
+		s.add(t);
+		((c) => {
+			if (typeof GM_addStyle === "function") GM_addStyle(c);
+			else (document.head || document.documentElement).appendChild(document.createElement("style")).append(c);
+		})(t);
+	};
 	var __create = Object.create;
 	var __defProp = Object.defineProperty;
 	var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -7320,6 +7330,28 @@
 			enabled: false,
 			action: "dim",
 			dimOpacity: .3
+		},
+		declutter: {
+			enabled: false,
+			hideShorts: false,
+			hideHomepage: false,
+			hideSidebar: false,
+			hideLiveStreams: false,
+			hideUpcoming: false,
+			hideMixes: false,
+			hideRelated: false,
+			hideComments: false,
+			hideEndScreen: false,
+			redirectHomepageTo: "none",
+			grayscaleMode: false,
+			hideInfoCards: false,
+			hideNativeMetrics: false,
+			hidePromotedSearch: false,
+			autoSkipAds: false,
+			autoExpandDescription: false,
+			autoTheaterMode: false,
+			timestampCommentsOnly: false,
+			fixGridGaps: true
 		}
 	};
 	function deepMerge(target, source) {
@@ -7366,12 +7398,30 @@
 	};
 	var Logger = new LoggerClass();
 	var callbacks = [];
+	var urlChangeCallbacks = [];
+	function registerDomMutationCallback(cb) {
+		callbacks.push(cb);
+	}
+	function registerUrlChangeCallback(cb) {
+		urlChangeCallbacks.push(cb);
+	}
 	var domMutationsThrottled = false;
 	var hasUnseenDomMutations = false;
+	var currentPathname = "";
 	function handleDomMutations() {
 		if (domMutationsThrottled) {
 			hasUnseenDomMutations = true;
 			return;
+		}
+		if (window.location.pathname !== currentPathname) {
+			currentPathname = window.location.pathname;
+			if (currentPathname === "/") document.documentElement.setAttribute("data-yte-is-homepage", "true");
+			else document.documentElement.removeAttribute("data-yte-is-homepage");
+			for (const cb of urlChangeCallbacks) try {
+				cb();
+			} catch (e) {
+				Logger.error("Error in url change callback", e);
+			}
 		}
 		domMutationsThrottled = true;
 		for (const cb of callbacks) cb();
@@ -7387,7 +7437,7 @@
 		Logger.info("Initializing MutationObserver on document body");
 		const observer = new MutationObserver((mutations) => {
 			let shouldUpdate = false;
-			for (const mutation of mutations) if (mutation.type === "childList" || mutation.type === "attributes" && mutation.attributeName === "class") {
+			for (const mutation of mutations) if (mutation.type === "childList" || mutation.type === "attributes" && (mutation.attributeName === "class" || mutation.attributeName === "src" || mutation.attributeName === "href")) {
 				shouldUpdate = true;
 				break;
 			}
@@ -7398,15 +7448,16 @@
 				childList: true,
 				subtree: true,
 				attributes: true,
-				attributeFilter: ["class"]
+				attributeFilter: [
+					"class",
+					"src",
+					"href"
+				]
 			});
 			handleDomMutations();
 		};
 		if (document.body) observeBody();
 		else document.addEventListener("DOMContentLoaded", observeBody);
-	}
-	function registerDomMutationCallback(cb) {
-		callbacks.push(cb);
 	}
 	var DEFAULT_SELECTORS = {
 		thumbnails: [
@@ -8177,8 +8228,306 @@ ytm-badge-and-byline-renderer .yte-percentage::before { margin: 0 4px 0 0; }
 			}
 		}
 	}
+	var DECLUTTER_STYLE_ID = "yte-declutter-styles";
+	function applyDeclutterStyles(settings) {
+		let styleEl = document.getElementById(DECLUTTER_STYLE_ID);
+		if (!settings.enabled) {
+			if (styleEl) styleEl.remove();
+			return;
+		}
+		if (!window.hasOwnProperty("yteHomepageListenerInstalled")) {
+			const updateHomepageState = () => {
+				if (window.location.pathname === "/") document.documentElement.setAttribute("data-yte-is-homepage", "true");
+				else document.documentElement.removeAttribute("data-yte-is-homepage");
+			};
+			updateHomepageState();
+			window.addEventListener("yt-navigate-finish", updateHomepageState);
+			Object.defineProperty(window, "yteHomepageListenerInstalled", {
+				value: true,
+				writable: false
+			});
+		}
+		if (!styleEl) {
+			styleEl = document.createElement("style");
+			styleEl.id = DECLUTTER_STYLE_ID;
+			document.head.appendChild(styleEl);
+		}
+		const rules = [];
+		if (settings.hideShorts) rules.push(`
+      ytd-reel-shelf-renderer,
+      ytd-rich-shelf-renderer[is-shorts],
+      ytd-rich-section-renderer:has(a[href^="/shorts/"]),
+      ytm-reel-shelf-renderer,
+      yt-horizontal-list-renderer:has(a[href^="/shorts/"]),
+      a[title="Shorts"],
+      *[is_short="true"],
+      ytd-video-renderer[is_short="true"],
+      ytm-video-with-context-renderer[is_short="true"],
+      ytd-rich-item-renderer:has(ytd-thumbnail-overlay-time-status-renderer[overlay-style="SHORTS"]),
+      ytd-grid-video-renderer:has(ytd-thumbnail-overlay-time-status-renderer[overlay-style="SHORTS"]),
+      /* Target individual Shorts lockups in new ViewModel architecture */
+      ytd-rich-item-renderer:has(a[href^="/shorts/"]) {
+        display: none !important;
+      }
+    `);
+		if (settings.hideHomepage) rules.push(`
+      ytd-browse[page-subtype="home"],
+      ytd-browse[page-subtype="home"] * {
+        display: none !important;
+      }
+      /* Fallback if page-subtype is missing */
+      ytd-browse:not([page-subtype]) ytd-rich-grid-renderer {
+        display: none !important;
+      }
+      /* Ultimate fallback relying on SPA navigation state */
+      html[data-yte-is-homepage="true"] ytd-page-manager > ytd-browse {
+        display: none !important;
+      }
+    `);
+		if (settings.hideSidebar) rules.push(`
+      #secondary,
+      #secondary-inner,
+      ytd-watch-next-secondary-results-renderer {
+        display: none !important;
+      }
+      /* Center contents when the sidebar is entirely hidden */
+      ytd-watch-flexy[flexy][is-two-columns_]:not([fullscreen]):not([theater]) {
+        --ytd-watch-flexy-max-player-width: calc(var(--ytd-watch-flexy-chat-max-height)*var(--ytd-watch-flexy-width-ratio)/var(--ytd-watch-flexy-height-ratio)) !important;
+      }
+      #columns {
+        justify-content: center;
+      }
+    `);
+		if (settings.hideLiveStreams) rules.push(`
+      ytd-rich-item-renderer:has(ytd-badge-supported-renderer:contains("LIVE")),
+      ytd-video-renderer:has(ytd-badge-supported-renderer:contains("LIVE")),
+      ytd-grid-video-renderer:has(ytd-badge-supported-renderer:contains("LIVE")),
+      ytd-rich-item-renderer[badge-text="live"],
+      ytd-grid-video-renderer[badge-text="live"] {
+        display: none !important;
+      }
+    `);
+		if (settings.hideUpcoming) rules.push(`
+      ytd-rich-item-renderer:has(ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]),
+      ytd-video-renderer:has(ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]),
+      ytd-grid-video-renderer:has(ytd-thumbnail-overlay-time-status-renderer[overlay-style="UPCOMING"]),
+      ytd-rich-item-renderer[badge-text="upcoming"],
+      ytd-rich-item-renderer[badge-text="premiere"],
+      ytd-grid-video-renderer[badge-text="upcoming"],
+      ytd-grid-video-renderer[badge-text="premiere"] {
+        display: none !important;
+      }
+    `);
+		if (settings.hideMixes) rules.push(`
+      ytd-rich-item-renderer:has(ytd-thumbnail-overlay-bottom-panel-renderer),
+      ytd-radio-renderer,
+      *[is_playable] {
+        display: none !important;
+      }
+    `);
+		if (settings.hideEndScreen) rules.push(`
+      .html5-endscreen,
+      .ytp-fullscreen-grid-stills-container,
+      .ytp-pause-overlay {
+        display: none !important;
+      }
+    `);
+		if (settings.hideComments) rules.push(`
+      #comments,
+      #comment-teaser,
+      ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"] {
+        display: none !important;
+      }
+    `);
+		if (settings.grayscaleMode) rules.push(`
+      html {
+        filter: grayscale(100%) !important;
+      }
+    `);
+		if (settings.hideNativeMetrics) rules.push(`
+      #owner-sub-count,
+      ytd-video-primary-info-renderer #top-level-buttons-computed ytd-toggle-button-renderer {
+        display: none !important;
+      }
+    `);
+		if (settings.hideInfoCards) rules.push(`
+      .ytp-ce-element,
+      .ytp-info-cards-container {
+        display: none !important;
+      }
+    `);
+		if (settings.hidePromotedSearch) rules.push(`
+      ytd-promoted-sparkles-web-renderer,
+      ytd-shelf-renderer:has(span:contains("People also watched")),
+      ytd-shelf-renderer:has(span:contains("For you")) {
+        display: none !important;
+      }
+    `);
+		styleEl.textContent = rules.join("\\n");
+	}
+	function isThumbnailHiddenByDeclutter(thumbnailElement, settings) {
+		if (!settings.enabled) return false;
+		if (settings.hideShorts) {
+			if (thumbnailElement.closest("ytd-reel-shelf-renderer, ytm-reel-shelf-renderer, [is_short=\"true\"]")) return true;
+			const timeStatus = thumbnailElement.querySelector("ytd-thumbnail-overlay-time-status-renderer");
+			if (timeStatus && timeStatus.getAttribute("overlay-style") === "SHORTS") return true;
+		}
+		if (settings.hideHomepage && window.location.pathname === "/") return true;
+		if (settings.hideSidebar) {
+			if (thumbnailElement.closest("#secondary, ytd-watch-next-secondary-results-renderer")) return true;
+		}
+		if (settings.hideMixes) {
+			if (thumbnailElement.closest("ytd-radio-renderer")) return true;
+			if (thumbnailElement.querySelector("ytd-thumbnail-overlay-bottom-panel-renderer")) return true;
+		}
+		if (settings.hideLiveStreams) {
+			const badge = thumbnailElement.closest("ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer")?.querySelector("ytd-badge-supported-renderer");
+			if (badge && badge.textContent?.toUpperCase().includes("LIVE")) return true;
+		}
+		if (settings.hideUpcoming) {
+			const timeStatus = thumbnailElement.querySelector("ytd-thumbnail-overlay-time-status-renderer");
+			if (timeStatus && timeStatus.getAttribute("overlay-style") === "UPCOMING") return true;
+		}
+		return false;
+	}
+	function setupRedirects(settings) {
+		if (!settings.enabled || settings.redirectHomepageTo === "none") return;
+		const checkRedirect = () => {
+			if (window.location.pathname === "/") {
+				const target = settings.redirectHomepageTo;
+				let path = "/";
+				if (target === "subscriptions") path = "/feed/subscriptions";
+				else if (target === "library") path = "/feed/library";
+				else if (target === "watch_later") path = "/playlist?list=WL";
+				if (path !== "/") {
+					Logger.info(`[Redirect] Redirecting homepage to ${path}`);
+					window.location.replace(path);
+				}
+			}
+		};
+		checkRedirect();
+		registerUrlChangeCallback(checkRedirect);
+		window.addEventListener("yt-navigate-start", checkRedirect);
+	}
+	var adObserver = null;
+	var playerObserver = null;
+	function initPlayerTweaks(settings) {
+		if (!settings.enabled) return;
+		if (settings.autoSkipAds) startAdSkipper();
+		if (settings.autoExpandDescription || settings.autoTheaterMode) startPlayerObserver(settings);
+	}
+	function startAdSkipper() {
+		if (adObserver) return;
+		Logger.info("[PlayerTweaks] Starting Ad Skipper observer");
+		adObserver = new MutationObserver(() => {
+			const skipButton = document.querySelector(".ytp-ad-skip-button-modern, .ytp-ad-skip-button, .ytp-skip-ad-button");
+			if (skipButton) {
+				Logger.debug("[PlayerTweaks] Clicking skip ad button");
+				skipButton.click();
+			}
+		});
+		adObserver.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+	}
+	function startPlayerObserver(settings) {
+		if (playerObserver) return;
+		Logger.info("[PlayerTweaks] Starting Player observer (Expand/Theater)");
+		playerObserver = new MutationObserver(() => {
+			if (settings.autoExpandDescription && window.location.pathname === "/watch") {
+				const expandBtn = document.querySelector("#bottom-row #expand");
+				const metadata = document.querySelector("ytd-watch-metadata");
+				if (expandBtn && expandBtn.offsetParent !== null && metadata && !metadata.hasAttribute("description-expanded")) {
+					Logger.debug("[PlayerTweaks] Auto-expanding description");
+					expandBtn.click();
+					metadata.setAttribute("description-expanded", "true");
+				}
+			}
+			if (settings.autoTheaterMode && window.location.pathname === "/watch") {
+				const flexy = document.querySelector("ytd-watch-flexy");
+				if (flexy && !flexy.hasAttribute("theater")) {
+					const sizeBtn = document.querySelector(".ytp-size-button");
+					if (sizeBtn) {
+						Logger.debug("[PlayerTweaks] Auto-enabling theater mode");
+						sizeBtn.click();
+					}
+				}
+			}
+		});
+		playerObserver.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+	}
+	var commentsObserver = null;
+	function initCommentFilter(settings) {
+		if (!settings.enabled || !settings.timestampCommentsOnly) return;
+		if (!commentsObserver) {
+			commentsObserver = new MutationObserver((mutations) => {
+				if (window.location.pathname !== "/watch") return;
+				for (const mutation of mutations) for (const node of Array.from(mutation.addedNodes)) if (node instanceof HTMLElement) {
+					const threads = node.tagName === "YTD-COMMENT-THREAD-RENDERER" ? [node] : Array.from(node.querySelectorAll("ytd-comment-thread-renderer"));
+					for (const thread of threads) checkCommentForTimestamp(thread);
+				}
+			});
+			commentsObserver.observe(document.body, {
+				childList: true,
+				subtree: true
+			});
+		}
+		let styleEl = document.getElementById("yte-comment-filter-styles");
+		if (!styleEl) {
+			styleEl = document.createElement("style");
+			styleEl.id = "yte-comment-filter-styles";
+			styleEl.textContent = `ytd-comment-thread-renderer[data-yte-hidden-comment="true"] { display: none !important; }`;
+			document.head.appendChild(styleEl);
+		}
+	}
+	function checkCommentForTimestamp(thread) {
+		if (thread.hasAttribute("data-yte-hidden-comment")) return;
+		const expander = thread.querySelector("ytd-expander");
+		if (!expander) return;
+		if (expander.querySelectorAll("a[href*=\"&t=\"]").length === 0) thread.setAttribute("data-yte-hidden-comment", "true");
+	}
+	var gridObserver = null;
+	var timeoutId = null;
+	function initGridReflow(settings) {
+		if (!settings.enabled || !settings.fixGridGaps) return;
+		if (gridObserver) return;
+		Logger.info("[GridReflow] Starting Grid Reflow Observer");
+		gridObserver = new MutationObserver((mutations) => {
+			if (window.location.pathname !== "/" && window.location.pathname !== "/watch") return;
+			if (timeoutId !== null) window.clearTimeout(timeoutId);
+			timeoutId = window.setTimeout(() => {
+				recalculateGrid();
+				timeoutId = null;
+			}, 100);
+		});
+		gridObserver.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+	}
+	function recalculateGrid() {
+		document.querySelectorAll("ytd-rich-grid-row").forEach((row) => {
+			const items = Array.from(row.querySelectorAll("ytd-rich-item-renderer"));
+			if (items.length === 0) return;
+			let visibleCount = 0;
+			for (const item of items) {
+				if (item.hasAttribute("data-yte-hidden-by-us")) continue;
+				if (window.getComputedStyle(item).display === "none") continue;
+				visibleCount++;
+			}
+			if (visibleCount > 0) {
+				row.style.display = "";
+				row.style.setProperty("--ytd-rich-grid-items-per-row", visibleCount.toString(), "important");
+			} else row.style.display = "none";
+		});
+	}
+	_css("@keyframes modal-pop{0%{opacity:0;transform:scale(.95)translateY(10px)}to{opacity:1;transform:scale(1)translateY(0)}}.yte-settings-overlay{-webkit-backdrop-filter:blur(12px);z-index:9999999;box-sizing:border-box;background-color:#0009;justify-content:center;align-items:center;width:100%;height:100%;padding:20px;display:flex;position:fixed;top:0;left:0}.yte-settings-modal{color:#f1f1f1;background-color:#181818d9;border:1px solid #ffffff14;border-radius:16px;flex-direction:column;width:100%;max-width:600px;max-height:90vh;font-family:Roboto,Inter,sans-serif;animation:.3s cubic-bezier(.175,.885,.32,1.275) forwards modal-pop;display:flex;overflow:hidden;box-shadow:0 16px 40px #00000080,inset 0 1px #ffffff1a}.yte-settings-header{background:linear-gradient(90deg,#cc000026 0%,#18181800 100%);border-bottom:1px solid #ffffff14;justify-content:space-between;align-items:center;padding:24px;display:flex;position:relative}.yte-settings-title{letter-spacing:-.5px;margin:0;font-size:22px;font-weight:600}.yte-settings-subtitle{color:#aaa;margin:4px 0 0;font-size:13px}.yte-close-btn{color:#aaa;cursor:pointer;background:0 0;border:none;padding:0;font-size:28px;line-height:1;transition:color .2s}.yte-close-btn:hover{color:#fff}.yte-settings-content{flex-direction:column;gap:24px;padding:24px;display:flex;overflow-y:auto}.yte-settings-content::-webkit-scrollbar{width:8px}.yte-settings-content::-webkit-scrollbar-track{background:0 0}.yte-settings-content::-webkit-scrollbar-thumb{background:#fff3;border-radius:4px}.yte-section{background-color:#ffffff05;border:1px solid #ffffff0a;border-radius:12px;flex-direction:column;gap:16px;padding:20px;transition:background-color .2s;display:flex}.yte-section:hover{background-color:#ffffff08}.yte-section-title{text-transform:uppercase;letter-spacing:1px;color:#ff4d4d;margin:0 0 4px;font-size:14px;font-weight:700}.yte-row{justify-content:space-between;align-items:center;gap:16px;display:flex}.yte-label{color:#e0e0e0;font-size:14px;font-weight:500}.yte-input,.yte-select{color:#fff;background:#0006;border:1px solid #ffffff1a;border-radius:8px;outline:none;padding:10px 14px;font-family:inherit;font-size:14px;transition:border-color .2s}.yte-input:focus,.yte-select:focus{border-color:#ff4d4d99}.yte-color-input{-webkit-appearance:none;cursor:pointer;background:0 0;border:none;border-radius:6px;width:32px;height:32px;padding:0;overflow:hidden}.yte-color-input::-webkit-color-swatch-wrapper{padding:0}.yte-color-input::-webkit-color-swatch{border:1px solid #fff3;border-radius:6px}.yte-range{-webkit-appearance:none;background:#ffffff1a;border-radius:4px;outline:none;width:100%;height:6px;transition:background .2s}.yte-range::-webkit-slider-thumb{appearance:none;cursor:pointer;background:#ff4d4d;border-radius:50%;width:16px;height:16px;transition:transform .1s}.yte-range::-webkit-slider-thumb:hover{transform:scale(1.2)}.yte-toggle{width:44px;height:24px;display:inline-block;position:relative}.yte-toggle input{opacity:0;width:0;height:0}.yte-slider{cursor:pointer;background-color:#ffffff1a;border-radius:24px;transition:all .3s cubic-bezier(.4,0,.2,1);position:absolute;inset:0}.yte-slider:before{content:\"\";background-color:#fff;border-radius:50%;width:18px;height:18px;transition:all .3s cubic-bezier(.4,0,.2,1);position:absolute;bottom:3px;left:3px;box-shadow:0 2px 4px #0000004d}input:checked+.yte-slider{background-color:#c00}input:checked+.yte-slider:before{transform:translate(20px)}.yte-settings-footer{background-color:#0000004d;border-top:1px solid #ffffff14;justify-content:space-between;align-items:center;padding:20px 24px;display:flex}.yte-btn{cursor:pointer;border:none;border-radius:8px;padding:10px 24px;font-family:inherit;font-size:14px;font-weight:600;transition:all .2s}.yte-btn-secondary{color:#fff;background:#ffffff14}.yte-btn-secondary:hover{background:#ffffff26}.yte-btn-primary{color:#fff;background:linear-gradient(135deg,red 0%,#c00 100%);box-shadow:0 4px 12px #cc00004d}.yte-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px #cc000080}");
 	var require_react_jsx_runtime_production_min = __commonJSMin(((exports) => {
-		var f = require_react(), k = Symbol.for("react.element"), m = Object.prototype.hasOwnProperty, n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, p = {
+		var f = require_react(), k = Symbol.for("react.element"), l = Symbol.for("react.fragment"), m = Object.prototype.hasOwnProperty, n = f.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentOwner, p = {
 			key: !0,
 			ref: !0,
 			__self: !0,
@@ -8200,14 +8549,131 @@ ytm-badge-and-byline-renderer .yte-percentage::before { margin: 0 4px 0 0; }
 				_owner: n.current
 			};
 		}
+		exports.Fragment = l;
 		exports.jsx = q;
 		exports.jsxs = q;
 	}));
 	var import_jsx_runtime = __commonJSMin(((exports, module) => {
 		module.exports = require_react_jsx_runtime_production_min();
 	}))();
+	var ToggleRow = ({ label, checked, onChange }) => (0, import_jsx_runtime.jsxs)("div", {
+		className: "yte-row",
+		children: [(0, import_jsx_runtime.jsx)("label", {
+			className: "yte-label",
+			children: label
+		}), (0, import_jsx_runtime.jsxs)("label", {
+			className: "yte-toggle",
+			children: [(0, import_jsx_runtime.jsx)("input", {
+				type: "checkbox",
+				checked,
+				onChange: (e) => onChange(e.target.checked)
+			}), (0, import_jsx_runtime.jsx)("span", { className: "yte-slider" })]
+		})]
+	});
+	var SelectRow = ({ label, value, options, onChange }) => (0, import_jsx_runtime.jsxs)("div", {
+		className: "yte-row",
+		children: [(0, import_jsx_runtime.jsx)("label", {
+			className: "yte-label",
+			children: label
+		}), (0, import_jsx_runtime.jsx)("select", {
+			className: "yte-select",
+			value,
+			onChange: (e) => onChange(e.target.value),
+			children: options.map((o) => (0, import_jsx_runtime.jsx)("option", {
+				value: o.val,
+				children: o.label
+			}, o.val))
+		})]
+	});
+	var InputRow = ({ label, type = "number", value, onChange, min, max, step }) => (0, import_jsx_runtime.jsxs)("div", {
+		className: "yte-row",
+		children: [(0, import_jsx_runtime.jsx)("label", {
+			className: "yte-label",
+			children: label
+		}), (0, import_jsx_runtime.jsx)("input", {
+			className: "yte-input",
+			type,
+			min,
+			max,
+			step,
+			value,
+			onChange: (e) => onChange(e.target.value)
+		})]
+	});
+	var ColorRow = ({ label, value, onChange }) => (0, import_jsx_runtime.jsxs)("div", {
+		className: "yte-row",
+		children: [(0, import_jsx_runtime.jsx)("label", {
+			className: "yte-label",
+			children: label
+		}), (0, import_jsx_runtime.jsx)("input", {
+			className: "yte-color-input",
+			type: "color",
+			value,
+			onChange: (e) => onChange(e.target.value)
+		})]
+	});
+	var RangeRow = ({ label, value, onChange, min, max, step }) => (0, import_jsx_runtime.jsxs)("div", {
+		className: "yte-row",
+		style: {
+			flexDirection: "column",
+			alignItems: "flex-start",
+			gap: "8px"
+		},
+		children: [(0, import_jsx_runtime.jsxs)("div", {
+			style: {
+				display: "flex",
+				justifyContent: "space-between",
+				width: "100%"
+			},
+			children: [(0, import_jsx_runtime.jsx)("label", {
+				className: "yte-label",
+				children: label
+			}), (0, import_jsx_runtime.jsx)("span", {
+				style: {
+					fontSize: "12px",
+					color: "#aaaaaa"
+				},
+				children: value
+			})]
+		}), (0, import_jsx_runtime.jsx)("input", {
+			type: "range",
+			className: "yte-range",
+			min,
+			max,
+			step,
+			value,
+			onChange: (e) => onChange(parseFloat(e.target.value)),
+			style: { width: "100%" }
+		})]
+	});
+	var TextareaRow = ({ label, value, onChange }) => (0, import_jsx_runtime.jsxs)("div", {
+		className: "yte-row",
+		style: {
+			flexDirection: "column",
+			alignItems: "flex-start",
+			gap: "8px"
+		},
+		children: [(0, import_jsx_runtime.jsx)("label", {
+			className: "yte-label",
+			children: label
+		}), (0, import_jsx_runtime.jsx)("textarea", {
+			className: "yte-input",
+			value,
+			onChange: (e) => onChange(e.target.value),
+			style: {
+				width: "100%",
+				minHeight: "80px",
+				resize: "vertical"
+			}
+		})]
+	});
 	var SettingsMenu = ({ initialSettings, onClose }) => {
 		const [settings, setSettings] = (0, import_react.useState)(initialSettings);
+		const [isClosing, setIsClosing] = (0, import_react.useState)(false);
+		const handleClose = () => {
+			setIsClosing(true);
+			setTimeout(onClose, 250);
+		};
 		const handleSave = () => {
 			saveSettings(settings);
 			location.reload();
@@ -8230,489 +8696,463 @@ ytm-badge-and-byline-renderer .yte-percentage::before { margin: 0 4px 0 0; }
 				...updates
 			}));
 		};
-		const containerStyle = {
-			position: "fixed",
-			top: 0,
-			left: 0,
-			width: "100%",
-			height: "100%",
-			backgroundColor: "rgba(0,0,0,0.6)",
-			backdropFilter: "blur(8px)",
-			zIndex: 9999999,
-			display: "flex",
-			justifyContent: "center",
-			alignItems: "center",
-			padding: "20px",
-			boxSizing: "border-box"
-		};
-		const modalStyle = {
-			backgroundColor: "rgba(30, 30, 30, 0.85)",
-			color: "#fff",
-			borderRadius: "16px",
-			width: "100%",
-			maxWidth: "600px",
-			maxHeight: "90vh",
-			display: "flex",
-			flexDirection: "column",
-			overflow: "hidden",
-			fontFamily: "\"Roboto\", \"Inter\", sans-serif",
-			boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
-			border: "1px solid rgba(255, 255, 255, 0.1)"
-		};
-		const headerStyle = {
-			padding: "24px",
-			borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-			background: "linear-gradient(90deg, rgba(255,0,0,0.2) 0%, rgba(30,30,30,0) 100%)",
-			position: "sticky",
-			top: 0,
-			zIndex: 10
-		};
-		const contentStyle = {
-			padding: "24px",
-			overflowY: "auto",
-			display: "flex",
-			flexDirection: "column",
-			gap: "24px"
-		};
-		const sectionStyle = {
-			backgroundColor: "rgba(255, 255, 255, 0.03)",
-			borderRadius: "12px",
-			padding: "20px",
-			border: "1px solid rgba(255, 255, 255, 0.05)",
-			display: "flex",
-			flexDirection: "column",
-			gap: "16px"
-		};
-		const footerStyle = {
-			padding: "20px 24px",
-			borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-			backgroundColor: "rgba(0, 0, 0, 0.2)",
-			display: "flex",
-			justifyContent: "space-between"
-		};
-		const rowStyle = {
-			display: "flex",
-			justifyContent: "space-between",
-			alignItems: "center"
-		};
-		const inputStyle = {
-			background: "rgba(0, 0, 0, 0.3)",
-			border: "1px solid rgba(255, 255, 255, 0.2)",
-			color: "#fff",
-			padding: "8px 12px",
-			borderRadius: "6px",
-			outline: "none"
-		};
-		const buttonPrimaryStyle = {
-			background: "linear-gradient(135deg, #ff0000 0%, #cc0000 100%)",
-			color: "#fff",
-			border: "none",
-			padding: "10px 24px",
-			borderRadius: "8px",
-			cursor: "pointer",
-			fontWeight: "bold",
-			fontSize: "14px",
-			transition: "opacity 0.2s"
-		};
-		const buttonSecondaryStyle = {
-			background: "rgba(255, 255, 255, 0.1)",
-			color: "#fff",
-			border: "1px solid rgba(255, 255, 255, 0.2)",
-			padding: "10px 24px",
-			borderRadius: "8px",
-			cursor: "pointer",
-			fontWeight: "bold",
-			fontSize: "14px",
-			transition: "background 0.2s"
-		};
 		return (0, import_jsx_runtime.jsx)("div", {
-			style: containerStyle,
+			className: "yte-settings-overlay",
+			style: {
+				opacity: isClosing ? 0 : 1,
+				transition: "opacity 0.2s"
+			},
 			children: (0, import_jsx_runtime.jsxs)("div", {
-				style: modalStyle,
+				className: "yte-settings-modal",
+				style: {
+					transform: isClosing ? "scale(0.95)" : "",
+					transition: "transform 0.2s"
+				},
 				children: [
-					(0, import_jsx_runtime.jsx)("div", {
-						style: headerStyle,
-						children: (0, import_jsx_runtime.jsxs)("div", {
-							style: {
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center"
-							},
-							children: [(0, import_jsx_runtime.jsxs)("div", { children: [(0, import_jsx_runtime.jsx)("h2", {
-								style: {
-									margin: 0,
-									fontSize: "20px",
-									fontWeight: 600
-								},
-								children: "YouTube Creme Settings"
-							}), (0, import_jsx_runtime.jsx)("p", {
-								style: {
-									margin: "4px 0 0 0",
-									fontSize: "13px",
-									color: "#ccc"
-								},
-								children: "Customize your enhancement experience"
-							})] }), (0, import_jsx_runtime.jsx)("button", {
-								onClick: onClose,
-								style: {
-									background: "transparent",
-									border: "none",
-									color: "#aaa",
-									cursor: "pointer",
-									fontSize: "24px"
-								},
-								children: "×"
-							})]
-						})
+					(0, import_jsx_runtime.jsxs)("div", {
+						className: "yte-settings-header",
+						children: [(0, import_jsx_runtime.jsxs)("div", { children: [(0, import_jsx_runtime.jsx)("h2", {
+							className: "yte-settings-title",
+							children: "YouTube Creme"
+						}), (0, import_jsx_runtime.jsx)("p", {
+							className: "yte-settings-subtitle",
+							children: "Customize your premium viewing experience"
+						})] }), (0, import_jsx_runtime.jsx)("button", {
+							onClick: handleClose,
+							className: "yte-close-btn",
+							children: "×"
+						})]
 					}),
 					(0, import_jsx_runtime.jsxs)("div", {
-						style: contentStyle,
+						className: "yte-settings-content",
 						children: [
 							(0, import_jsx_runtime.jsxs)("div", {
-								style: sectionStyle,
+								className: "yte-section",
 								children: [
 									(0, import_jsx_runtime.jsx)("h3", {
-										style: {
-											margin: 0,
-											fontSize: "16px",
-											color: "#ff4d4d"
-										},
+										className: "yte-section-title",
 										children: "Rating Bar"
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Enable Rating Bar" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.ratingBar.enabled,
-											onChange: (e) => updateSection("ratingBar", { enabled: e.target.checked })
-										})]
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Enable Rating Bar",
+										checked: settings.ratingBar.enabled,
+										onChange: (v) => updateSection("ratingBar", { enabled: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Position" }), (0, import_jsx_runtime.jsxs)("select", {
-											style: inputStyle,
-											value: settings.ratingBar.position,
-											onChange: (e) => updateSection("ratingBar", { position: e.target.value }),
-											children: [(0, import_jsx_runtime.jsx)("option", {
-												value: "bottom",
-												children: "Bottom"
-											}), (0, import_jsx_runtime.jsx)("option", {
-												value: "top",
-												children: "Top"
-											})]
-										})]
+									(0, import_jsx_runtime.jsx)(SelectRow, {
+										label: "Position",
+										value: settings.ratingBar.position,
+										onChange: (v) => updateSection("ratingBar", { position: v }),
+										options: [{
+											val: "bottom",
+											label: "Bottom"
+										}, {
+											val: "top",
+											label: "Top"
+										}]
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Height (px)" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											value: settings.ratingBar.height,
-											onChange: (e) => updateSection("ratingBar", { height: parseInt(e.target.value) || 0 })
-										})]
+									(0, import_jsx_runtime.jsx)(InputRow, {
+										label: "Height (px)",
+										value: settings.ratingBar.height,
+										onChange: (v) => updateSection("ratingBar", { height: parseInt(v) || 0 })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Color Scheme" }), (0, import_jsx_runtime.jsxs)("select", {
-											style: inputStyle,
-											value: settings.ratingBar.colorScheme,
-											onChange: (e) => updateSection("ratingBar", { colorScheme: e.target.value }),
-											children: [
-												(0, import_jsx_runtime.jsx)("option", {
-													value: "blue-gray",
-													children: "Blue / Gray"
-												}),
-												(0, import_jsx_runtime.jsx)("option", {
-													value: "green-red",
-													children: "Green / Red"
-												}),
-												(0, import_jsx_runtime.jsx)("option", {
-													value: "custom-colors",
-													children: "Custom"
-												})
-											]
-										})]
+									(0, import_jsx_runtime.jsx)(RangeRow, {
+										label: "Opacity (%)",
+										min: "0",
+										max: "100",
+										step: "1",
+										value: settings.ratingBar.opacity,
+										onChange: (v) => updateSection("ratingBar", { opacity: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Show Stats Text" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.ratingBar.showStatsText,
-											onChange: (e) => updateSection("ratingBar", { showStatsText: e.target.checked })
-										})]
-									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Show Tooltip (Hover stats)" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.ratingBar.tooltip,
-											onChange: (e) => updateSection("ratingBar", { tooltip: e.target.checked })
-										})]
-									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Exponential Scaling" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.ratingBar.exponentialScaling,
-											onChange: (e) => updateSection("ratingBar", { exponentialScaling: e.target.checked })
-										})]
-									}),
-									settings.ratingBar.exponentialScaling && (0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Exponential Power (Sensitivity)" }), (0, import_jsx_runtime.jsxs)("div", {
-											style: {
-												display: "flex",
-												alignItems: "center",
-												gap: "8px"
+									(0, import_jsx_runtime.jsx)(SelectRow, {
+										label: "Color Scheme",
+										value: settings.ratingBar.colorScheme,
+										onChange: (v) => updateSection("ratingBar", { colorScheme: v }),
+										options: [
+											{
+												val: "blue-gray",
+												label: "Blue / Gray"
 											},
-											children: [(0, import_jsx_runtime.jsx)("input", {
-												style: { flexGrow: 1 },
-												type: "range",
-												min: "1",
-												max: "20",
-												step: "0.5",
-												value: settings.ratingBar.exponentialPower ?? 4,
-												onChange: (e) => updateSection("ratingBar", { exponentialPower: parseFloat(e.target.value) || 4 })
-											}), (0, import_jsx_runtime.jsx)("span", {
-												style: {
-													fontSize: "12px",
-													minWidth: "30px"
-												},
-												children: settings.ratingBar.exponentialPower ?? 4
-											})]
-										})]
+											{
+												val: "green-red",
+												label: "Green / Red"
+											},
+											{
+												val: "custom-colors",
+												label: "Custom"
+											}
+										]
+									}),
+									settings.ratingBar.colorScheme === "custom-colors" && (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+										(0, import_jsx_runtime.jsx)(ColorRow, {
+											label: "Likes Color",
+											value: settings.ratingBar.likesColor,
+											onChange: (v) => updateSection("ratingBar", { likesColor: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ColorRow, {
+											label: "Dislikes Color",
+											value: settings.ratingBar.dislikesColor,
+											onChange: (v) => updateSection("ratingBar", { dislikesColor: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Enable Custom Color Separator",
+											checked: settings.ratingBar.colorSeparator,
+											onChange: (v) => updateSection("ratingBar", { colorSeparator: v })
+										})
+									] }),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Enable Visual Separator",
+										checked: settings.ratingBar.separator,
+										onChange: (v) => updateSection("ratingBar", { separator: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Show Stats Text",
+										checked: settings.ratingBar.showStatsText,
+										onChange: (v) => updateSection("ratingBar", { showStatsText: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Show Tooltip (Hover stats)",
+										checked: settings.ratingBar.tooltip,
+										onChange: (v) => updateSection("ratingBar", { tooltip: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Exponential Scaling (Enhances tiny dislike ratios)",
+										checked: settings.ratingBar.exponentialScaling,
+										onChange: (v) => updateSection("ratingBar", { exponentialScaling: v })
+									}),
+									settings.ratingBar.exponentialScaling && (0, import_jsx_runtime.jsx)(RangeRow, {
+										label: "Exponential Power",
+										min: "1",
+										max: "20",
+										step: "0.5",
+										value: settings.ratingBar.exponentialPower,
+										onChange: (v) => updateSection("ratingBar", { exponentialPower: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Apply To Video Player Page",
+										checked: settings.ratingBar.applyToVideoPage,
+										onChange: (v) => updateSection("ratingBar", { applyToVideoPage: v })
 									})
 								]
 							}),
 							(0, import_jsx_runtime.jsxs)("div", {
-								style: sectionStyle,
+								className: "yte-section",
 								children: [
 									(0, import_jsx_runtime.jsx)("h3", {
-										style: {
-											margin: 0,
-											fontSize: "16px",
-											color: "#ff4d4d"
-										},
+										className: "yte-section-title",
+										children: "Declutter & Clean UI"
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Enable Declutter Features",
+										checked: settings.declutter?.enabled || false,
+										onChange: (v) => updateSection("declutter", { enabled: v })
+									}),
+									settings.declutter?.enabled && (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Shorts Everywhere",
+											checked: settings.declutter.hideShorts,
+											onChange: (v) => updateSection("declutter", { hideShorts: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Homepage (Browse)",
+											checked: settings.declutter.hideHomepage,
+											onChange: (v) => updateSection("declutter", { hideHomepage: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Sidebar",
+											checked: settings.declutter.hideSidebar,
+											onChange: (v) => updateSection("declutter", { hideSidebar: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Live Streams",
+											checked: settings.declutter.hideLiveStreams,
+											onChange: (v) => updateSection("declutter", { hideLiveStreams: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Upcoming Premieres",
+											checked: settings.declutter.hideUpcoming,
+											onChange: (v) => updateSection("declutter", { hideUpcoming: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Mixes & Playables",
+											checked: settings.declutter.hideMixes,
+											onChange: (v) => updateSection("declutter", { hideMixes: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Related Videos (End Screen)",
+											checked: settings.declutter.hideEndScreen,
+											onChange: (v) => updateSection("declutter", { hideEndScreen: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Hide Comments entirely",
+											checked: settings.declutter.hideComments,
+											onChange: (v) => updateSection("declutter", { hideComments: v })
+										}),
+										(0, import_jsx_runtime.jsx)(ToggleRow, {
+											label: "Fix Grid Layout Gaps (Flex-Reflow)",
+											checked: settings.declutter.fixGridGaps,
+											onChange: (v) => updateSection("declutter", { fixGridGaps: v })
+										})
+									] })
+								]
+							}),
+							(0, import_jsx_runtime.jsxs)("div", {
+								className: "yte-section",
+								children: [
+									(0, import_jsx_runtime.jsx)("h3", {
+										className: "yte-section-title",
+										children: "Advanced Focus & Zen"
+									}),
+									(0, import_jsx_runtime.jsx)(SelectRow, {
+										label: "Redirect Homepage To",
+										value: settings.declutter?.redirectHomepageTo || "none",
+										onChange: (v) => updateSection("declutter", { redirectHomepageTo: v }),
+										options: [
+											{
+												val: "none",
+												label: "Disabled (Do not redirect)"
+											},
+											{
+												val: "subscriptions",
+												label: "Subscriptions"
+											},
+											{
+												val: "library",
+												label: "Library / You"
+											},
+											{
+												val: "watch_later",
+												label: "Watch Later"
+											}
+										]
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Grayscale Mode",
+										checked: settings.declutter?.grayscaleMode || false,
+										onChange: (v) => updateSection("declutter", { grayscaleMode: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Hide Promoted & 'People Also Watched' in Search",
+										checked: settings.declutter?.hidePromotedSearch || false,
+										onChange: (v) => updateSection("declutter", { hidePromotedSearch: v })
+									})
+								]
+							}),
+							(0, import_jsx_runtime.jsxs)("div", {
+								className: "yte-section",
+								children: [
+									(0, import_jsx_runtime.jsx)("h3", {
+										className: "yte-section-title",
+										children: "Player Automation Tweaks"
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Auto-Skip Ads",
+										checked: settings.declutter?.autoSkipAds || false,
+										onChange: (v) => updateSection("declutter", { autoSkipAds: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Auto-Expand Description",
+										checked: settings.declutter?.autoExpandDescription || false,
+										onChange: (v) => updateSection("declutter", { autoExpandDescription: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Auto-Theater Mode",
+										checked: settings.declutter?.autoTheaterMode || false,
+										onChange: (v) => updateSection("declutter", { autoTheaterMode: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Hide Info Cards & 'Play Next'",
+										checked: settings.declutter?.hideInfoCards || false,
+										onChange: (v) => updateSection("declutter", { hideInfoCards: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Hide Native Metrics (Likes & Subs)",
+										checked: settings.declutter?.hideNativeMetrics || false,
+										onChange: (v) => updateSection("declutter", { hideNativeMetrics: v })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Only Show Comments with Timestamps",
+										checked: settings.declutter?.timestampCommentsOnly || false,
+										onChange: (v) => updateSection("declutter", { timestampCommentsOnly: v })
+									})
+								]
+							}),
+							(0, import_jsx_runtime.jsxs)("div", {
+								className: "yte-section",
+								children: [
+									(0, import_jsx_runtime.jsx)("h3", {
+										className: "yte-section-title",
 										children: "Video Filters"
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Enable Video Filters" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.videoFilter.enabled,
-											onChange: (e) => updateSection("videoFilter", { enabled: e.target.checked })
-										})]
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Enable Video Filters",
+										checked: settings.videoFilter.enabled,
+										onChange: (v) => updateSection("videoFilter", { enabled: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Action" }), (0, import_jsx_runtime.jsxs)("select", {
-											style: inputStyle,
-											value: settings.videoFilter.action,
-											onChange: (e) => updateSection("videoFilter", { action: e.target.value }),
-											children: [(0, import_jsx_runtime.jsx)("option", {
-												value: "dim",
-												children: "Dim (Fade Out)"
-											}), (0, import_jsx_runtime.jsx)("option", {
-												value: "remove",
-												children: "Remove Completely"
-											})]
-										})]
+									(0, import_jsx_runtime.jsx)(SelectRow, {
+										label: "Action",
+										value: settings.videoFilter.action,
+										onChange: (v) => updateSection("videoFilter", { action: v }),
+										options: [{
+											val: "dim",
+											label: "Dim (Fade Out)"
+										}, {
+											val: "remove",
+											label: "Remove Completely"
+										}]
 									}),
-									settings.videoFilter.action === "dim" && (0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Dim Opacity (0 to 1)" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											step: "0.05",
-											min: "0",
-											max: "1",
-											value: settings.videoFilter.dimOpacity,
-											onChange: (e) => updateSection("videoFilter", { dimOpacity: parseFloat(e.target.value) || 0 })
-										})]
+									settings.videoFilter.action === "dim" && (0, import_jsx_runtime.jsx)(RangeRow, {
+										label: "Dim Opacity",
+										min: "0",
+										max: "1",
+										step: "0.05",
+										value: settings.videoFilter.dimOpacity,
+										onChange: (v) => updateSection("videoFilter", { dimOpacity: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Minimum Rating %" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											min: "0",
-											max: "100",
-											step: "0.1",
-											value: settings.videoFilter.minRatingPercent,
-											onChange: (e) => updateSection("videoFilter", { minRatingPercent: parseFloat(e.target.value) || 0 })
-										})]
+									(0, import_jsx_runtime.jsx)(InputRow, {
+										label: "Minimum Rating %",
+										step: "0.1",
+										value: settings.videoFilter.minRatingPercent,
+										onChange: (v) => updateSection("videoFilter", { minRatingPercent: parseFloat(v) || 0 })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Minimum Views" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											min: "0",
-											value: settings.videoFilter.minViews,
-											onChange: (e) => updateSection("videoFilter", { minViews: parseInt(e.target.value) || 0 })
-										})]
+									(0, import_jsx_runtime.jsx)(InputRow, {
+										label: "Minimum Views",
+										value: settings.videoFilter.minViews,
+										onChange: (v) => updateSection("videoFilter", { minViews: parseInt(v) || 0 })
+									}),
+									(0, import_jsx_runtime.jsx)(InputRow, {
+										label: "Maximum Views (0 to ignore)",
+										value: settings.videoFilter.maxViews,
+										onChange: (v) => updateSection("videoFilter", { maxViews: parseInt(v) || 0 })
+									}),
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Hide Live Streams",
+										checked: settings.videoFilter.hideLiveStreams,
+										onChange: (v) => updateSection("videoFilter", { hideLiveStreams: v })
 									})
 								]
 							}),
 							(0, import_jsx_runtime.jsxs)("div", {
-								style: sectionStyle,
+								className: "yte-section",
 								children: [
 									(0, import_jsx_runtime.jsx)("h3", {
-										style: {
-											margin: 0,
-											fontSize: "16px",
-											color: "#ff4d4d"
-										},
-										children: "Duration Filters"
+										className: "yte-section-title",
+										children: "Duration Filter"
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Enable Duration Filters" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.durationFilter.enabled,
-											onChange: (e) => updateSection("durationFilter", { enabled: e.target.checked })
-										})]
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Enable Duration Filter",
+										checked: settings.durationFilter.enabled,
+										onChange: (v) => updateSection("durationFilter", { enabled: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Action" }), (0, import_jsx_runtime.jsxs)("select", {
-											style: inputStyle,
-											value: settings.durationFilter.action,
-											onChange: (e) => updateSection("durationFilter", { action: e.target.value }),
-											children: [(0, import_jsx_runtime.jsx)("option", {
-												value: "dim",
-												children: "Dim (Fade Out)"
-											}), (0, import_jsx_runtime.jsx)("option", {
-												value: "remove",
-												children: "Remove Completely"
-											})]
-										})]
+									(0, import_jsx_runtime.jsx)(SelectRow, {
+										label: "Action",
+										value: settings.durationFilter.action,
+										onChange: (v) => updateSection("durationFilter", { action: v }),
+										options: [{
+											val: "dim",
+											label: "Dim (Fade Out)"
+										}, {
+											val: "remove",
+											label: "Remove Completely"
+										}]
 									}),
-									settings.durationFilter.action === "dim" && (0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Dim Opacity (0 to 1)" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											step: "0.05",
-											min: "0",
-											max: "1",
-											value: settings.durationFilter.dimOpacity,
-											onChange: (e) => updateSection("durationFilter", { dimOpacity: parseFloat(e.target.value) || 0 })
-										})]
+									settings.durationFilter.action === "dim" && (0, import_jsx_runtime.jsx)(RangeRow, {
+										label: "Dim Opacity",
+										min: "0",
+										max: "1",
+										step: "0.05",
+										value: settings.durationFilter.dimOpacity,
+										onChange: (v) => updateSection("durationFilter", { dimOpacity: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Minimum Duration (Seconds)" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											min: "0",
-											value: settings.durationFilter.minDurationSeconds,
-											onChange: (e) => updateSection("durationFilter", { minDurationSeconds: parseInt(e.target.value) || 0 })
-										})]
+									(0, import_jsx_runtime.jsx)(InputRow, {
+										label: "Minimum Duration (Seconds)",
+										value: settings.durationFilter.minDurationSeconds,
+										onChange: (v) => updateSection("durationFilter", { minDurationSeconds: parseInt(v) || 0 })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Apply on Search Results Only" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.durationFilter.applyOnSearchOnly,
-											onChange: (e) => updateSection("durationFilter", { applyOnSearchOnly: e.target.checked })
-										})]
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Apply Only On Search Page",
+										checked: settings.durationFilter.applyOnSearchOnly,
+										onChange: (v) => updateSection("durationFilter", { applyOnSearchOnly: v })
 									})
 								]
 							}),
 							(0, import_jsx_runtime.jsxs)("div", {
-								style: sectionStyle,
+								className: "yte-section",
 								children: [
 									(0, import_jsx_runtime.jsx)("h3", {
-										style: {
-											margin: 0,
-											fontSize: "16px",
-											color: "#ff4d4d"
-										},
-										children: "Developer Options"
+										className: "yte-section-title",
+										children: "Seen Videos"
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "Enable Debug Mode" }), (0, import_jsx_runtime.jsx)("input", {
-											type: "checkbox",
-											checked: settings.debugMode,
-											onChange: (e) => updateRoot({ debugMode: e.target.checked })
-										})]
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Hide/Dim Seen Videos",
+										checked: settings.seenVideos.enabled,
+										onChange: (v) => updateSection("seenVideos", { enabled: v })
 									}),
-									(0, import_jsx_runtime.jsxs)("div", {
-										style: rowStyle,
-										children: [(0, import_jsx_runtime.jsx)("label", { children: "API Cache Duration (Hours)" }), (0, import_jsx_runtime.jsx)("input", {
-											style: inputStyle,
-											type: "number",
-											min: "0",
-											max: "720",
-											step: "1",
-											value: settings.cacheDurationHours ?? 24,
-											onChange: (e) => updateRoot({ cacheDurationHours: parseFloat(e.target.value) || 0 })
-										})]
+									(0, import_jsx_runtime.jsx)(SelectRow, {
+										label: "Action",
+										value: settings.seenVideos.action,
+										onChange: (v) => updateSection("seenVideos", { action: v }),
+										options: [{
+											val: "dim",
+											label: "Dim (Fade Out)"
+										}, {
+											val: "remove",
+											label: "Remove Completely"
+										}]
+									}),
+									settings.seenVideos.action === "dim" && (0, import_jsx_runtime.jsx)(RangeRow, {
+										label: "Dim Opacity",
+										min: "0",
+										max: "1",
+										step: "0.05",
+										value: settings.seenVideos.dimOpacity,
+										onChange: (v) => updateSection("seenVideos", { dimOpacity: v })
 									})
 								]
 							}),
 							(0, import_jsx_runtime.jsxs)("div", {
-								style: sectionStyle,
+								className: "yte-section",
 								children: [
 									(0, import_jsx_runtime.jsx)("h3", {
-										style: {
-											margin: 0,
-											fontSize: "16px",
-											color: "#ff4d4d"
-										},
-										children: "Advanced: Custom Selectors"
+										className: "yte-section-title",
+										children: "Developer & Overrides"
 									}),
-									(0, import_jsx_runtime.jsx)("p", {
-										style: {
-											margin: 0,
-											fontSize: "12px",
-											color: "#aaa",
-											lineHeight: "1.4"
-										},
-										children: "Override internal DOM selectors using JSON. If YouTube changes their layout, you can fix the script here without modifying the code. Leave empty to use defaults."
+									(0, import_jsx_runtime.jsx)(ToggleRow, {
+										label: "Enable Debug Mode",
+										checked: settings.debugMode,
+										onChange: (v) => updateRoot({ debugMode: v })
 									}),
-									(0, import_jsx_runtime.jsx)("textarea", {
-										style: {
-											...inputStyle,
-											width: "100%",
-											height: "150px",
-											fontFamily: "monospace",
-											resize: "vertical"
-										},
-										value: settings.customSelectors || "",
-										placeholder: "{\\n  \"thumbnails\": \"a#thumbnail, a.ytd-thumbnail\"\\n}",
-										onChange: (e) => updateRoot({ customSelectors: e.target.value })
+									(0, import_jsx_runtime.jsx)(InputRow, {
+										label: "API Cache Duration (Hours)",
+										value: settings.cacheDurationHours,
+										onChange: (v) => updateRoot({ cacheDurationHours: parseInt(v) || 0 })
+									}),
+									(0, import_jsx_runtime.jsx)(TextareaRow, {
+										label: "Custom JSON Selectors",
+										value: settings.customSelectors,
+										onChange: (v) => updateRoot({ customSelectors: v })
 									})
 								]
 							})
 						]
 					}),
 					(0, import_jsx_runtime.jsxs)("div", {
-						style: footerStyle,
+						className: "yte-settings-footer",
 						children: [(0, import_jsx_runtime.jsx)("button", {
 							onClick: handleReset,
-							style: buttonSecondaryStyle,
-							onMouseOver: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)",
-							onMouseOut: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)",
+							className: "yte-btn yte-btn-secondary",
 							children: "Reset Defaults"
 						}), (0, import_jsx_runtime.jsxs)("div", {
 							style: {
 								display: "flex",
-								gap: "8px"
+								gap: "12px"
 							},
 							children: [(0, import_jsx_runtime.jsx)("button", {
-								onClick: onClose,
-								style: buttonSecondaryStyle,
-								onMouseOver: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)",
-								onMouseOut: (e) => e.currentTarget.style.background = "rgba(255,255,255,0.1)",
+								onClick: handleClose,
+								className: "yte-btn yte-btn-secondary",
 								children: "Cancel"
 							}), (0, import_jsx_runtime.jsx)("button", {
 								onClick: handleSave,
-								style: buttonPrimaryStyle,
-								onMouseOver: (e) => e.currentTarget.style.opacity = "0.8",
-								onMouseOut: (e) => e.currentTarget.style.opacity = "1",
+								className: "yte-btn yte-btn-primary",
 								children: "Save & Reload"
 							})]
 						})]
@@ -8721,6 +9161,52 @@ ytm-badge-and-byline-renderer .yte-percentage::before { margin: 0 4px 0 0; }
 			})
 		});
 	};
+	var mastheadObserver = null;
+	function initMastheadButton(openSettings) {
+		Logger.info("[Masthead] Waiting for YouTube masthead to load...");
+		mastheadObserver = new MutationObserver(() => {
+			const buttonsContainer = document.querySelector("#end #buttons.ytd-masthead");
+			if (buttonsContainer && !document.getElementById("yte-masthead-btn")) injectButton(buttonsContainer, openSettings);
+		});
+		mastheadObserver.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+		const immButtonsContainer = document.querySelector("#end #buttons.ytd-masthead");
+		if (immButtonsContainer) injectButton(immButtonsContainer, openSettings);
+	}
+	function injectButton(container, openSettings) {
+		if (document.getElementById("yte-masthead-btn")) return;
+		Logger.info("[Masthead] Injecting Creme settings button");
+		const wrapper = document.createElement("div");
+		wrapper.id = "yte-masthead-btn";
+		wrapper.style.display = "flex";
+		wrapper.style.alignItems = "center";
+		wrapper.style.justifyContent = "center";
+		wrapper.style.marginRight = "8px";
+		wrapper.style.width = "40px";
+		wrapper.style.height = "40px";
+		wrapper.style.borderRadius = "50%";
+		wrapper.style.cursor = "pointer";
+		wrapper.addEventListener("mouseenter", () => {
+			wrapper.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+		});
+		wrapper.addEventListener("mouseleave", () => {
+			wrapper.style.backgroundColor = "transparent";
+		});
+		wrapper.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: block; width: 24px; height: 24px; fill: var(--yt-spec-text-primary, currentColor);">
+      <path d="M12 9.5c1.38 0 2.5 1.12 2.5 2.5s-1.12 2.5-2.5 2.5-2.5-1.12-2.5-2.5 1.12-2.5 2.5-2.5m0-1c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zM13.22 3l.55 2.2.13.51.5.18c.61.23 1.19.56 1.72.98l.4.32.5-.14 2.17-.62 1.22 2.11-1.63 1.59-.37.36.08.51c.05.32.08.64.08.98s-.03.66-.08.98l-.08.51.37.36 1.63 1.59-1.22 2.11-2.17-.62-.5-.14-.4.32c-.53.43-1.11.76-1.72.98l-.5.18-.13.51-.55 2.24h-2.44l-.55-2.2-.13-.51-.5-.18c-.6-.23-1.18-.56-1.72-.99l-.4-.32-.5.14-2.17.62-1.21-2.12 1.63-1.59.37-.36-.08-.51c-.05-.32-.08-.65-.08-.98s.03-.66.08-.98l.08-.51-.37-.36-1.63-1.59 1.21-2.12 2.17.62.5.14.4-.32c.53-.42 1.11-.76 1.72-.98l.5-.18.13-.51.55-2.2h2.44M14 2h-4l-.74 2.96c-.73.27-1.4.66-2 1.14l-2.92-.83-2 3.46 2.19 2.13c-.06.37-.09.75-.09 1.14s.03.77.09 1.14l-2.19 2.13 2 3.46 2.92-.83c.6.48 1.27.87 2 1.14L10 22h4l.74-2.96c.73-.27 1.4-.66 2-1.14l2.92.83 2-3.46-2.19-2.13c.06-.37.09-.75.09-1.14s-.03-.77-.09-1.14l2.19-2.13-2-3.46-2.92.83c-.6-.48-1.27-.87-2-1.14L14 2z"></path>
+    </svg>
+  `;
+		wrapper.title = "YouTube Creme Settings";
+		wrapper.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			openSettings();
+		});
+		container.prepend(wrapper);
+	}
 	var settings = loadSettings();
 	async function processThumbnail(thumbnailElement, thumbnailUrl, passedVideoId) {
 		if (thumbnailElement.closest("snackbar-container, ytd-expandable-metadata-renderer, ytd-macro-markers-list-item-renderer, yt-player-storyboard")) return;
@@ -8755,6 +9241,13 @@ ytm-badge-and-byline-renderer .yte-percentage::before { margin: 0 4px 0 0; }
 		Logger.debug(`[Main] Found ${thumbnails.length} potential thumbnail elements to process`);
 		thumbnails.forEach((thumbnailElement) => {
 			let videoId = null;
+			if (settings.declutter && isThumbnailHiddenByDeclutter(thumbnailElement, settings.declutter)) {
+				if (!thumbnailElement.hasAttribute("data-yte-hidden-by-us")) {
+					thumbnailElement.setAttribute("data-yte-hidden-by-us", "true");
+					Logger.debug(`[Main] Skipping hidden thumbnail`, thumbnailElement);
+				}
+				return;
+			} else if (thumbnailElement.hasAttribute("data-yte-hidden-by-us")) thumbnailElement.removeAttribute("data-yte-hidden-by-us");
 			videoId = thumbnailElement.getAttribute("data-yte-video-id");
 			if (!videoId) {
 				const link = thumbnailElement.closest("a[href*=\"/watch?v=\"], a[href*=\"/shorts/\"]");
@@ -8780,33 +9273,46 @@ ytm-badge-and-byline-renderer .yte-percentage::before { margin: 0 4px 0 0; }
 			else Logger.debug(`[Main] Skipping thumbnail element: no video ID found`, thumbnailElement);
 		});
 	}
+	function openSettings() {
+		const host = document.createElement("div");
+		host.id = "yte-settings-root";
+		document.body.appendChild(host);
+		const root = (0, import_client.createRoot)(host);
+		root.render((0, import_jsx_runtime.jsx)(SettingsMenu, {
+			initialSettings: settings,
+			onClose: () => {
+				root.unmount();
+				host.remove();
+			}
+		}));
+	}
 	function main() {
-		Logger.info("Initializing styles and color settings");
-		applyColorSettings(settings);
-		applyStyles(settings);
-		Logger.info("Registering feature modules");
-		registerDomMutationCallback(() => {
-			if (settings.videoFilter.enabled) processViewsFilter(settings.videoFilter);
-			if (settings.ratingBar.enabled && (settings.ratingBar.height !== 0 || settings.ratingBar.showStatsText) || settings.videoFilter.enabled && settings.videoFilter.minRatingPercent > 0) processNewThumbnails();
-			if (settings.durationFilter.enabled) processDurationFilter(settings.durationFilter);
-			if (settings.seenVideos.enabled) processSeenVideos(settings.seenVideos);
-			const shelves = document.querySelectorAll(SELECTORS.shelves);
-			for (const shelf of shelves) if (shelf.querySelectorAll(SELECTORS.visibleVideosInShelf).length === 0) shelf.style.display = "none";
-		});
-		initObserver();
-		_GM_registerMenuCommand("Settings...", () => {
-			const host = document.createElement("div");
-			host.id = "yte-settings-root";
-			document.body.appendChild(host);
-			const root = (0, import_client.createRoot)(host);
-			root.render((0, import_jsx_runtime.jsx)(SettingsMenu, {
-				initialSettings: settings,
-				onClose: () => {
-					root.unmount();
-					host.remove();
-				}
-			}));
-		});
+		const init = () => {
+			Logger.info("Initializing styles and color settings");
+			applyColorSettings(settings);
+			applyStyles(settings);
+			if (settings.declutter) {
+				applyDeclutterStyles(settings.declutter);
+				setupRedirects(settings.declutter);
+				initPlayerTweaks(settings.declutter);
+				initCommentFilter(settings.declutter);
+				initGridReflow(settings.declutter);
+			}
+			Logger.info("Registering feature modules");
+			registerDomMutationCallback(() => {
+				if (settings.videoFilter.enabled) processViewsFilter(settings.videoFilter);
+				if (settings.ratingBar.enabled && (settings.ratingBar.height !== 0 || settings.ratingBar.showStatsText) || settings.videoFilter.enabled && settings.videoFilter.minRatingPercent > 0) processNewThumbnails();
+				if (settings.durationFilter.enabled) processDurationFilter(settings.durationFilter);
+				if (settings.seenVideos.enabled) processSeenVideos(settings.seenVideos);
+				const shelves = document.querySelectorAll(SELECTORS.shelves);
+				for (const shelf of shelves) if (shelf.querySelectorAll(SELECTORS.visibleVideosInShelf).length === 0) shelf.style.display = "none";
+			});
+			initObserver();
+			_GM_registerMenuCommand("Settings...", openSettings);
+			initMastheadButton(openSettings);
+		};
+		if (document.body && document.head) init();
+		else document.addEventListener("DOMContentLoaded", init);
 	}
 	main();
 })();

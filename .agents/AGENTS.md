@@ -44,3 +44,9 @@ Use the modern approach (Vite + TypeScript + React/Preact/Vue) when the script i
 *   **Performance**: Avoid heavy polling (e.g. `setInterval`). Use `MutationObserver`. 
 *   **Caching**: Never use `GM_setValue` for large, frequently updated datasets (e.g. API caches) as JSON stringification blocks the main thread. Use asynchronous `IndexedDB`.
 *   **Security & CSP**: Do not use `.innerHTML`. Modern sites (e.g. YouTube) use strict Trusted Types CSP which blocks strings. Always use standard DOM APIs (`document.createElement`, `textContent`).
+
+## Knowledge Retention (`NOTES.md`)
+We maintain a highly concentrated, crisp document called `NOTES.md` in the root of the workspace.
+If you learn a new insight about how a website works (like YouTube's virtual DOM, Polymer behaviors), discover a neat coding trick, or solve a tricky edge case, you **MUST** document it in `NOTES.md`. Keep the signal-to-noise ratio high. Future agents will rely on this file to stand on your shoulders.
+
+**CRITICAL TASK SEQUENCING RULE**: When you discover a new insight or solve a complex bug, you MUST update `NOTES.md` **BEFORE** concluding your turn and reporting back to the user. Treat updating `NOTES.md` as a mandatory, blocking step in your checklist for any debugging or research task. Do not prioritize reporting success to the user over persisting knowledge.

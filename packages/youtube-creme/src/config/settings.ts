@@ -43,6 +43,31 @@ export interface SeenVideosSettings {
   dimOpacity: number;
 }
 
+export interface DeclutterSettings {
+  enabled: boolean;
+  hideShorts: boolean;
+  hideHomepage: boolean;
+  hideSidebar: boolean;
+  hideLiveStreams: boolean;
+  hideUpcoming: boolean;
+  hideMixes: boolean;
+  hideRelated: boolean;
+  hideComments: boolean;
+  hideEndScreen: boolean;
+  
+  // Advanced Focus & Zen
+  redirectHomepageTo: "none" | "subscriptions" | "library" | "watch_later";
+  grayscaleMode: boolean;
+  hideInfoCards: boolean;
+  hideNativeMetrics: boolean;
+  hidePromotedSearch: boolean;
+  autoSkipAds: boolean;
+  autoExpandDescription: boolean;
+  autoTheaterMode: boolean;
+  timestampCommentsOnly: boolean;
+  fixGridGaps: boolean;
+}
+
 export interface EnhancerSettings {
   debugMode: boolean;
   cacheDurationHours: number;
@@ -51,6 +76,7 @@ export interface EnhancerSettings {
   videoFilter: VideoFilterSettings;
   durationFilter: DurationFilterSettings;
   seenVideos: SeenVideosSettings;
+  declutter: DeclutterSettings;
 }
 
 export const DEFAULT_SETTINGS: EnhancerSettings = {
@@ -93,6 +119,28 @@ export const DEFAULT_SETTINGS: EnhancerSettings = {
     enabled: false,
     action: "dim",
     dimOpacity: 0.3,
+  },
+  declutter: {
+    enabled: false,
+    hideShorts: false,
+    hideHomepage: false,
+    hideSidebar: false,
+    hideLiveStreams: false,
+    hideUpcoming: false,
+    hideMixes: false,
+    hideRelated: false,
+    hideComments: false,
+    hideEndScreen: false,
+    redirectHomepageTo: "none",
+    grayscaleMode: false,
+    hideInfoCards: false,
+    hideNativeMetrics: false,
+    hidePromotedSearch: false,
+    autoSkipAds: false,
+    autoExpandDescription: false,
+    autoTheaterMode: false,
+    timestampCommentsOnly: false,
+    fixGridGaps: true,
   },
 };
 
